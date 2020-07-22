@@ -1,0 +1,9 @@
+*
+
+!go.mod
+!go.sum
+!dockerproxy
+!simpleproxy
+!utils
+!testutils
+!_example

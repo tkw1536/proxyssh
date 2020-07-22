@@ -1,0 +1,10 @@
+FROM golang:alpine as builder
+
+ADD . /app/src/github.com/tkw1536/proxyssh
+WORKDIR /app/src/github.com/tkw1536/proxyssh/_example/simple
+RUN go build -o /simple main.go
+
+FROM alpine
+EXPOSE 2222
+COPY --from=builder /simple /simple
+ENTRYPOINT [ "/simple" "-shell" "/bin/sh" ]
