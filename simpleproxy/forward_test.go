@@ -12,10 +12,14 @@ import (
 func TestForward(t *testing.T) {
 	t.Run("forward port forwarding works on an allowed port", func(t *testing.T) {
 		// make a new session with port forwarding
-		conn, _ := testutils.NewTestServerSession(
+		conn, _, err := testutils.NewTestServerSession(
 			testServer.Addr,
 			gossh.ClientConfig{},
 		)
+		if err != nil {
+			t.Errorf("Unable to create test server session: %s", err)
+			t.FailNow()
+		}
 		defer conn.Close()
 
 		// start a new local listener
@@ -27,6 +31,7 @@ func TestForward(t *testing.T) {
 		cc, err := conn.Dial("tcp", forwardPortsAllow.String())
 		if err != nil {
 			t.Errorf("Unable to dial forward: %s", err)
+			t.FailNow()
 		}
 		defer cc.Close()
 
@@ -44,10 +49,14 @@ func TestForward(t *testing.T) {
 	})
 	t.Run("forward port forwarding does not work on a denied port", func(t *testing.T) {
 		// make a new session
-		conn, _ := testutils.NewTestServerSession(
+		conn, _, err := testutils.NewTestServerSession(
 			testServer.Addr,
 			gossh.ClientConfig{},
 		)
+		if err != nil {
+			t.Errorf("Unable to create test server session: %s", err)
+			t.FailNow()
+		}
 		defer conn.Close()
 
 		// start a new local server
@@ -67,10 +76,14 @@ func TestForward(t *testing.T) {
 func TestReverse(t *testing.T) {
 	t.Run("reverse port forwarding works on an allowed port", func(t *testing.T) {
 		// make a new session with port forwarding
-		conn, _ := testutils.NewTestServerSession(
+		conn, _, err := testutils.NewTestServerSession(
 			testServer.Addr,
 			gossh.ClientConfig{},
 		)
+		if err != nil {
+			t.Errorf("Unable to create test server session: %s", err)
+			t.FailNow()
+		}
 		defer conn.Close()
 
 		// start a server to listen to
@@ -100,10 +113,14 @@ func TestReverse(t *testing.T) {
 	})
 	t.Run("reverse port forwarding does not work on denied port", func(t *testing.T) {
 		// make a new session with port forwarding
-		conn, _ := testutils.NewTestServerSession(
+		conn, _, err := testutils.NewTestServerSession(
 			testServer.Addr,
 			gossh.ClientConfig{},
 		)
+		if err != nil {
+			t.Errorf("Unable to create test server session: %s", err)
+			t.FailNow()
+		}
 		defer conn.Close()
 
 		// start a server to listen to

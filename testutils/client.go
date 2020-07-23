@@ -8,7 +8,7 @@ import (
 )
 
 // NewTestServerSession makes a new test server session
-func NewTestServerSession(addr string, opts ssh.ClientConfig) (*ssh.Client, *ssh.Session) {
+func NewTestServerSession(addr string, opts ssh.ClientConfig) (*ssh.Client, *ssh.Session, error) {
 	if opts.HostKeyCallback == nil {
 		opts.HostKeyCallback = func(hostname string, remote net.Addr, key ssh.PublicKey) error {
 			return nil
@@ -17,23 +17,26 @@ func NewTestServerSession(addr string, opts ssh.ClientConfig) (*ssh.Client, *ssh
 	// create a new client
 	conn, err := ssh.Dial("tcp", addr, &opts)
 	if err != nil {
-		panic(err)
+		return nil, nil, err
 	}
 
 	// create a new session
 	session, err := conn.NewSession()
 	if err != nil {
-		panic(err)
+		conn.Close()
+		return nil, nil, err
 	}
 
-	return conn, session
+	return conn, session, err
 }
 
 // RunTestServerCommand runs a command on the test server and returns its stdout, stderr and code
-// if something goes wrong running the command it panics()
-func RunTestServerCommand(addr string, opts ssh.ClientConfig, command, stdin string) (stdout string, stderr string, code int) {
+func RunTestServerCommand(addr string, opts ssh.ClientConfig, command, stdin string) (stdout string, stderr string, code int, err error) {
 	// create a new session
-	_, session := NewTestServerSession(addr, opts)
+	_, session, err := NewTestServerSession(addr, opts)
+	if err != nil {
+		return
+	}
 	defer session.Close()
 
 	// setup input
@@ -46,13 +49,14 @@ func RunTestServerCommand(addr string, opts ssh.ClientConfig, command, stdin str
 	session.Stderr = &stderrBuf
 
 	// run the command and get the exit code of the error
-	err := session.Run(command)
+	err = session.Run(command)
 	if err == nil {
 		code = 0
 	} else if eerr, iseerr := err.(*ssh.ExitError); iseerr {
 		code = eerr.ExitStatus()
+		err = nil
 	} else {
-		panic(err)
+		return
 	}
 
 	// save the buffers

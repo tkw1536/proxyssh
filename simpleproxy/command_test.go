@@ -66,7 +66,11 @@ func TestCommand(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotOut, gotErr, gotCode := testutils.RunTestServerCommand(testServer.Addr, gossh.ClientConfig{}, tt.command, tt.stdin)
+			gotOut, gotErr, gotCode, err := testutils.RunTestServerCommand(testServer.Addr, gossh.ClientConfig{}, tt.command, tt.stdin)
+			if err != nil {
+				t.Errorf("Unable to create test server session: %s", err)
+				t.FailNow()
+			}
 
 			if gotOut != tt.wantOut {
 				t.Errorf("Command() got out = %s, want = %s", gotOut, tt.wantOut)
