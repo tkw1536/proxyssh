@@ -20,6 +20,6 @@ func TestLogger() *log.Logger {
 		return logger
 	}
 
-	logger = log.New(os.Stderr, "test", log.LstdFlags)
+	logger = log.New(os.Stdout, "test", log.LstdFlags)
 	return logger
 }
