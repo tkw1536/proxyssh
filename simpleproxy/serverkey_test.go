@@ -2,23 +2,24 @@ package simpleproxy
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"testing"
 
 	"github.com/gliderlabs/ssh"
 	"github.com/tkw1536/proxyssh/testutils"
+	gossh "golang.org/x/crypto/ssh"
 )
 
-func TestReadOrMakeHostKey(t *testing.T) {
-
-	tests := []struct {
-		algorithm  HostKeyAlgorithm
-		publicKey  string
-		privateKey string
-	}{
-		{
-			algorithm: RSAAlgorithm,
-			privateKey: `-----BEGIN RSA PRIVATE KEY-----
+// testKeys represents
+var testKeys = []struct {
+	algorithm  HostKeyAlgorithm
+	publicKey  string
+	privateKey string
+}{
+	{
+		algorithm: RSAAlgorithm,
+		privateKey: `-----BEGIN RSA PRIVATE KEY-----
 MIIEpAIBAAKCAQEAvEjBnZHJQo7mXpPW94JnH+pXBi0wdaqQ4wgFaMACjmkCnT2Y
 Up6zAR9GXaiKcZGIItBrZ53VPEbGLMysLo1fbg3i8n9qyGkjHkbbOk0FKb1sgb9Y
 snERrGnaijhltE3JV9V7r8djcFRsE7sqOvw/+iBAFpxTLUna3saGkbplGQCLeZH8
@@ -45,21 +46,23 @@ thY2sQKBgQDascCJ/C3QUHgeqxquz5WJorOPKCc6yuAEcrxzRLqcpeuc+hedn2/n
 cYkgpFn+ZrD7OFj3d/DbO38redzOl6Bi9u0VPCsyw6ejjGuu53ZJuws1CV8vSLP3
 +2PxiwNUnMA/V3eGKPpKWnEP+psmf3/F0quZ8C2wh87jxQllszsKgQ==
 -----END RSA PRIVATE KEY-----`,
-			publicKey: `ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC8SMGdkclCjuZek9b3gmcf6lcGLTB1qpDjCAVowAKOaQKdPZhSnrMBH0ZdqIpxkYgi0GtnndU8RsYszKwujV9uDeLyf2rIaSMeRts6TQUpvWyBv1iycRGsadqKOGW0TclX1Xuvx2NwVGwTuyo6/D/6IEAWnFMtSdrexoaRumUZAIt5kfxR1L5PMDayon0bxOadTnhTcQhoyfDjVAYakqo+JkE89YUC8jDIcCdJ5EjAlCrG8o9Ttl5O6muCr+bdSiWWlc0Xa+Ma1T/CE7WsCOEHefRX/a5L22rVbO5FrjpVSt4XrnGUVRouqdE9t80oxYOSVDa+j1AnxY0859+3rOB7
-			`,
-		},
-		{
-			algorithm: ED25519Algorithm,
-			privateKey: `-----BEGIN PRIVATE KEY-----
+		publicKey: `ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC8SMGdkclCjuZek9b3gmcf6lcGLTB1qpDjCAVowAKOaQKdPZhSnrMBH0ZdqIpxkYgi0GtnndU8RsYszKwujV9uDeLyf2rIaSMeRts6TQUpvWyBv1iycRGsadqKOGW0TclX1Xuvx2NwVGwTuyo6/D/6IEAWnFMtSdrexoaRumUZAIt5kfxR1L5PMDayon0bxOadTnhTcQhoyfDjVAYakqo+JkE89YUC8jDIcCdJ5EjAlCrG8o9Ttl5O6muCr+bdSiWWlc0Xa+Ma1T/CE7WsCOEHefRX/a5L22rVbO5FrjpVSt4XrnGUVRouqdE9t80oxYOSVDa+j1AnxY0859+3rOB7
+		`,
+	},
+	{
+		algorithm: ED25519Algorithm,
+		privateKey: `-----BEGIN PRIVATE KEY-----
 5XWK7d7RseuAEPacEEKBCBrTVVX83VAQrLhdfwphSr4=
 -----END PRIVATE KEY-----
-			`,
-			publicKey: `ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBOk1XkUeNB+ICjiJVqYqm4xvdXa8nq/oN4VeQldzB2V`,
-		},
-	}
+		`,
+		publicKey: `ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBOk1XkUeNB+ICjiJVqYqm4xvdXa8nq/oN4VeQldzB2V`,
+	},
+}
 
-	for _, tt := range tests {
+func TestReadOrMakeHostKey(t *testing.T) {
+	for _, tt := range testKeys {
 
+		// get the public key
 		ttPublic, _, _, _, err := ssh.ParseAuthorizedKey([]byte(tt.publicKey))
 		if err != nil {
 			t.Fatal("Unable to parse public key")
@@ -123,5 +126,47 @@ cYkgpFn+ZrD7OFj3d/DbO38redzOl6Bi9u0VPCsyw6ejjGuu53ZJuws1CV8vSLP3
 			}
 		})
 
+	}
+}
+
+func TestUseOrMakeHostKey(t *testing.T) {
+	for _, tt := range testKeys {
+
+		// get the public key
+		ttPublic, _, _, _, err := ssh.ParseAuthorizedKey([]byte(tt.publicKey))
+		if err != nil {
+			t.Fatal("Unable to parse public key")
+		}
+
+		t.Run(fmt.Sprintf("use %s key", tt.algorithm), func(t *testing.T) {
+			// create a temporary file
+			tmpFile, cleanup := testutils.WriteTempFile("privkey.pem", tt.privateKey)
+			defer cleanup()
+
+			_, err := UseOrMakeHostKey(testutils.TestLogger(), testServer, tmpFile, tt.algorithm)
+			if err != nil {
+				t.Errorf("UseOrMakeHostKey() error = %v, wantError = nil", err)
+				t.FailNow()
+			}
+
+			// make a new session and store the public key
+			var gotPublicKey ssh.PublicKey
+			client, _, err := testutils.NewTestServerSession(testServer.Addr, gossh.ClientConfig{
+				HostKeyAlgorithms: []string{ttPublic.Type()},
+				HostKeyCallback: func(hostname string, remote net.Addr, key gossh.PublicKey) error {
+					gotPublicKey = key
+					return nil
+				},
+			})
+			if err != nil {
+				t.Errorf("Unable to create test server session: %s", err)
+				t.FailNow()
+			}
+			defer client.Close()
+
+			if !ssh.KeysEqual(gotPublicKey, ttPublic) {
+				t.Errorf("UseOrMakeHostKey(): wrong public key presented")
+			}
+		})
 	}
 }

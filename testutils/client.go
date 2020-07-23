@@ -33,11 +33,12 @@ func NewTestServerSession(addr string, opts ssh.ClientConfig) (*ssh.Client, *ssh
 // RunTestServerCommand runs a command on the test server and returns its stdout, stderr and code
 func RunTestServerCommand(addr string, opts ssh.ClientConfig, command, stdin string) (stdout string, stderr string, code int, err error) {
 	// create a new session
-	_, session, err := NewTestServerSession(addr, opts)
+	client, session, err := NewTestServerSession(addr, opts)
 	if err != nil {
 		return
 	}
 	defer session.Close()
+	defer client.Close()
 
 	// setup input
 	stdinBuf := bytes.NewBufferString(stdin)
