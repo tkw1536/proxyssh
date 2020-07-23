@@ -17,7 +17,7 @@ import (
 
 // HandleCommand creates an ssh.Handler that runs a given command on the real system
 // commander is a function that given an ssh session returns the command to be run.
-func HandleCommand(logger utils.LogLike, commander func(session ssh.Session) (command []string, err error)) ssh.Handler {
+func HandleCommand(logger utils.Logger, commander func(session ssh.Session) (command []string, err error)) ssh.Handler {
 	return func(session ssh.Session) {
 		// logging
 		utils.FmtSSHLog(logger, session, "session_start %s", session.User())
@@ -42,7 +42,7 @@ func HandleCommand(logger utils.LogLike, commander func(session ssh.Session) (co
 }
 
 // abortsession aborts a session with a given error message
-func abortsession(logger utils.LogLike, s ssh.Session, err error) {
+func abortsession(logger utils.Logger, s ssh.Session, err error) {
 	errmsg := err.Error()
 	utils.FmtSSHLog(logger, s, "session_command %s", errmsg)
 	io.WriteString(s.Stderr(), errmsg+"\n")
@@ -54,7 +54,7 @@ type sshCommand struct {
 	ssh.Session // the underlying ssh.session
 
 	// the underlying logger
-	Logger utils.LogLike
+	Logger utils.Logger
 
 	// the command and pty it's running on
 	cmd    *exec.Cmd
@@ -66,7 +66,7 @@ type sshCommand struct {
 
 // newSSHCommand returns a new ssh command
 // s is the underlying ssh session, command is the command to be run
-func newSSHCommand(logger utils.LogLike, session ssh.Session, command []string) (c *sshCommand, err error) {
+func newSSHCommand(logger utils.Logger, session ssh.Session, command []string) (c *sshCommand, err error) {
 
 	// Look for 'exe' in the path, bail out if you can't find it
 	var exe string

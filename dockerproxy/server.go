@@ -29,13 +29,13 @@ type ServerOptions struct {
 	// IdleTimeout is the timeout after which an idle connection is killed
 	IdleTimeout time.Duration
 	// ForwardPorts to allow forwarding for
-	ForwardPorts []utils.PortWithHost
+	ForwardPorts []utils.NetworkAddress
 	// ReversePorts to allow forwarding for
-	ReversePorts []utils.PortWithHost
+	ReversePorts []utils.NetworkAddress
 }
 
 // NewDockerProxyServer makes a new docker proxy server
-func NewDockerProxyServer(logger utils.LogLike, opts ServerOptions) (server *ssh.Server) {
+func NewDockerProxyServer(logger utils.Logger, opts ServerOptions) (server *ssh.Server) {
 	server = &ssh.Server{
 		Handler: simpleproxy.HandleCommand(logger, func(s ssh.Session) (command []string, err error) {
 			// no commands allowed for security reasons

@@ -14,11 +14,11 @@ var testServer *ssh.Server
 
 // make addresses for forward and reverse forwarding
 var (
-	forwardPortsAllow = utils.MustParsePortWithHost(testutils.NewTestListenAddress())
-	forwardPortsDeny  = utils.MustParsePortWithHost(testutils.NewTestListenAddress())
+	forwardPortsAllow = utils.MustParseNetworkAddress(testutils.NewTestListenAddress())
+	forwardPortsDeny  = utils.MustParseNetworkAddress(testutils.NewTestListenAddress())
 
-	reversePortsAllow = utils.MustParsePortWithHost(testutils.NewTestListenAddress())
-	reversePortsDeny  = utils.MustParsePortWithHost(testutils.NewTestListenAddress())
+	reversePortsAllow = utils.MustParseNetworkAddress(testutils.NewTestListenAddress())
+	reversePortsDeny  = utils.MustParseNetworkAddress(testutils.NewTestListenAddress())
 )
 
 func TestMain(m *testing.M) {
@@ -28,8 +28,8 @@ func TestMain(m *testing.M) {
 		testutils.TestLogger(),
 		ServerOptions{
 			Shell:         "/bin/bash",
-			ForwardPorts:  []utils.PortWithHost{forwardPortsAllow},
-			ReversePorts:  []utils.PortWithHost{reversePortsAllow},
+			ForwardPorts:  []utils.NetworkAddress{forwardPortsAllow},
+			ReversePorts:  []utils.NetworkAddress{reversePortsAllow},
 			ListenAddress: testutils.NewTestListenAddress(),
 		},
 	)

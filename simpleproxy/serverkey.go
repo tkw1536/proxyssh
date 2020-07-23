@@ -12,7 +12,7 @@ import (
 )
 
 // UseOrMakeHostKey uses or makes a host key
-func UseOrMakeHostKey(logger utils.LogLike, server *ssh.Server, path string, algorithm HostKeyAlgorithm) (*ssh.Server, error) {
+func UseOrMakeHostKey(logger utils.Logger, server *ssh.Server, path string, algorithm HostKeyAlgorithm) (*ssh.Server, error) {
 	key, err := ReadOrMakeHostKey(logger, path, algorithm)
 	if err != nil {
 		return server, err
@@ -24,7 +24,7 @@ func UseOrMakeHostKey(logger utils.LogLike, server *ssh.Server, path string, alg
 }
 
 // ReadOrMakeHostKey attempts to read an ssh host key from the given path or create a new one
-func ReadOrMakeHostKey(logger utils.LogLike, path string, algorithm HostKeyAlgorithm) (key gossh.Signer, err error) {
+func ReadOrMakeHostKey(logger utils.Logger, path string, algorithm HostKeyAlgorithm) (key gossh.Signer, err error) {
 	hostKey := newHostKey(algorithm)
 	// path doesn't exist => generate a new key there!
 	if _, e := os.Stat(path); os.IsNotExist(e) {
@@ -81,7 +81,7 @@ func newHostKey(algorithm HostKeyAlgorithm) hostKey {
 }
 
 // loadHostKey loadsa host key
-func loadHostKey(logger utils.LogLike, key hostKey, path string) (err error) {
+func loadHostKey(logger utils.Logger, key hostKey, path string) (err error) {
 	logger.Printf("load_hostkey %s %s", key.Algorithm(), path)
 
 	// read all the bytes from the file
@@ -107,7 +107,7 @@ func loadHostKey(logger utils.LogLike, key hostKey, path string) (err error) {
 }
 
 // makeHostKey makes a new host key
-func makeHostKey(logger utils.LogLike, key hostKey, path string) error {
+func makeHostKey(logger utils.Logger, key hostKey, path string) error {
 	logger.Printf("generate_hostkey %s %s", key.Algorithm(), path)
 
 	if err := key.Generate(); err != nil {

@@ -4,14 +4,16 @@ import (
 	"sync"
 )
 
-// Once is an object that can perform any action once
+// Once is an object that can perform any action once.
+// The zero value is ready to use.
 type Once struct {
 	mutex     sync.Mutex
 	performed bool
 }
 
-// Once performs the action it is passed the first time it is called
-// and otherwise does nothing
+// Once performs an action on this object unless an action has already been performed.
+// This function can safely be called from multiple goroutines at once.
+// The function returns a boolean indicating if the action was performed or not.
 func (o *Once) Once(action func()) bool {
 	if !o.shouldPerform() {
 		return false

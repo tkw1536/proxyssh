@@ -6,10 +6,10 @@ import (
 )
 
 // AllowForwardPorts sets a list of ports that is allowed to be forwarded
-func AllowForwardPorts(logger utils.LogLike, ports []utils.PortWithHost) ssh.LocalPortForwardingCallback {
+func AllowForwardPorts(logger utils.Logger, ports []utils.NetworkAddress) ssh.LocalPortForwardingCallback {
 	return func(ctx ssh.Context, dhost string, dport uint32) bool {
 		for _, p := range ports {
-			if p.Host == dhost && p.Port == dport {
+			if p.Hostname == dhost && p.Port == dport {
 				utils.FmtSSHLog(logger, ctx, "grant_portforward %s:%d", dhost, dport)
 				return true
 			}
@@ -20,10 +20,10 @@ func AllowForwardPorts(logger utils.LogLike, ports []utils.PortWithHost) ssh.Loc
 }
 
 // AllowReversePorts sets a list of ports that is allowed to be reverse forwarded
-func AllowReversePorts(logger utils.LogLike, ports []utils.PortWithHost) ssh.ReversePortForwardingCallback {
+func AllowReversePorts(logger utils.Logger, ports []utils.NetworkAddress) ssh.ReversePortForwardingCallback {
 	return func(ctx ssh.Context, bindHost string, bindPort uint32) bool {
 		for _, p := range ports {
-			if p.Host == bindHost && p.Port == bindPort {
+			if p.Hostname == bindHost && p.Port == bindPort {
 				utils.FmtSSHLog(logger, ctx, "grant_reverse_portforward %s:%d", bindHost, bindPort)
 				return true
 			}
@@ -34,7 +34,7 @@ func AllowReversePorts(logger utils.LogLike, ports []utils.PortWithHost) ssh.Rev
 }
 
 // AllowPortForwarding is like EnablePortForwarding except that it uses list of ports
-func AllowPortForwarding(logger utils.LogLike, server *ssh.Server, localPorts []utils.PortWithHost, reversePorts []utils.PortWithHost) *ssh.Server {
+func AllowPortForwarding(logger utils.Logger, server *ssh.Server, localPorts []utils.NetworkAddress, reversePorts []utils.NetworkAddress) *ssh.Server {
 	return EnablePortForwarding(server, AllowForwardPorts(logger, localPorts), AllowReversePorts(logger, reversePorts))
 }
 

@@ -1,3 +1,6 @@
+// Package utils contains utility functions that are used by dockerproxy and simpleproxy.
+// These methods are intended to be used by github.com/tkw1536/proxyssh/dockerproxy and github.com/tkw1536/proxyssh/simpleproxy only
+// and may change without notice.
 package utils
 
 import (
@@ -8,20 +11,22 @@ import (
 	"github.com/gliderlabs/ssh"
 )
 
-// SSHLike represents anything that looks like an ssh connection with a user and remote address
-type SSHLike interface {
+// SSHSessionOrContext represents unifies "github.com/gliderlabs/ssh".Session and "github.com/gliderlabs/ssh".Context.
+type SSHSessionOrContext interface {
 	User() string
 	RemoteAddr() net.Addr
 }
 
-// LogLike represents anything that looks like a logger
-type LogLike interface {
+// Logger is an interface for "log".Logger
+type Logger interface {
 	Print(v ...interface{})
 	Printf(format string, v ...interface{})
 }
 
-// FmtSSHLog is like logger.Printf except that it prefixes session information
-func FmtSSHLog(logger LogLike, s SSHLike, message string, args ...interface{}) {
+// FmtSSHLog works like "log".Printf except that it takes a Logger and SSHSessionOrContext as parameters.
+// The log output will be prefixed with an identifier of the current session or context.
+// message and arguments will be passed to "fmt".Sprintf.
+func FmtSSHLog(logger Logger, s SSHSessionOrContext, message string, args ...interface{}) {
 	prefix := fmt.Sprintf("[%s@%s] ", s.User(), s.RemoteAddr().String())
 	actual := fmt.Sprintf(message, args...)
 	logger.Print(prefix + actual)
@@ -29,9 +34,9 @@ func FmtSSHLog(logger LogLike, s SSHLike, message string, args ...interface{}) {
 
 func init() {
 	// check that ssh.Context and ssh.Session fullfill the SSHLike interface
-	var _ SSHLike = (ssh.Context)(nil)
-	var _ SSHLike = (ssh.Session)(nil)
+	var _ SSHSessionOrContext = (ssh.Context)(nil)
+	var _ SSHSessionOrContext = (ssh.Session)(nil)
 
 	// check that log.Logger represents an actual logger
-	var _ LogLike = (*log.Logger)(nil)
+	var _ Logger = (*log.Logger)(nil)
 }

@@ -16,15 +16,15 @@ type ServerOptions struct {
 	// Shell is the shell to run
 	Shell string
 	// ForwardPorts to allow forwarding for
-	ForwardPorts []utils.PortWithHost
+	ForwardPorts []utils.NetworkAddress
 	// ReversePorts to allow forwarding for
-	ReversePorts []utils.PortWithHost
+	ReversePorts []utils.NetworkAddress
 	// IdleTimeout is the timeout after which a connection is considered idle
 	IdleTimeout time.Duration
 }
 
 // NewSimpleProxyServer makes a new simple proxy server
-func NewSimpleProxyServer(logger utils.LogLike, opts ServerOptions) (server *ssh.Server) {
+func NewSimpleProxyServer(logger utils.Logger, opts ServerOptions) (server *ssh.Server) {
 	server = &ssh.Server{
 		Handler: HandleCommand(logger, func(s ssh.Session) ([]string, error) {
 			command := s.Command()
