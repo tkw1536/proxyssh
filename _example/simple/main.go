@@ -47,9 +47,9 @@ var (
 	// Shell is the shell to use
 	Shell = "/bin/bash"
 	// ForwardPorts are ports that are allowed to be forwarded
-	ForwardPorts = utils.PortListVar(nil)
+	ForwardPorts = utils.NetworkAddressListVar(nil)
 	// ReversePorts are ports that are allowed to be forwarded (in reverse)
-	ReversePorts = utils.PortListVar(nil)
+	ReversePorts = utils.NetworkAddressListVar(nil)
 	// HostKeyPath is the base path to the host key
 	HostKeyPath = "hostkey.pem"
 )

@@ -61,9 +61,9 @@ var (
 	// IdleTimeout is the timeout after which an idle connection is killed
 	IdleTimeout = 30
 	// ForwardPorts are ports that are allowed to be forwarded
-	ForwardPorts = utils.PortListVar(nil)
+	ForwardPorts = utils.NetworkAddressListVar(nil)
 	// ReversePorts are ports that are allowed to be forwarded (in reverse)
-	ReversePorts = utils.PortListVar(nil)
+	ReversePorts = utils.NetworkAddressListVar(nil)
 
 	// HostKeyPath is the path to the host key
 	HostKeyPath = "hostkey.pem"
