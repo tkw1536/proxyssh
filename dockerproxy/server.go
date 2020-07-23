@@ -6,7 +6,7 @@ import (
 
 	"github.com/docker/docker/client"
 	"github.com/gliderlabs/ssh"
-	"github.com/tkw1536/proxyssh/simpleproxy"
+	"github.com/tkw1536/proxyssh"
 	"github.com/tkw1536/proxyssh/utils"
 )
 
@@ -37,7 +37,7 @@ type ServerOptions struct {
 // NewDockerProxyServer makes a new docker proxy server
 func NewDockerProxyServer(logger utils.Logger, opts ServerOptions) (server *ssh.Server) {
 	server = &ssh.Server{
-		Handler: simpleproxy.HandleCommand(logger, func(s ssh.Session) (command []string, err error) {
+		Handler: proxyssh.HandleCommand(logger, func(s ssh.Session) (command []string, err error) {
 			// no commands allowed for security reasons
 			command = s.Command()
 			if len(command) == 0 {
@@ -58,7 +58,7 @@ func NewDockerProxyServer(logger utils.Logger, opts ServerOptions) (server *ssh.
 			command = DockerExec(s, container.ID, command, "", "")
 			return
 		}),
-		PublicKeyHandler: simpleproxy.AuthorizeKeys(func(ctx ssh.Context) ([]ssh.PublicKey, error) {
+		PublicKeyHandler: proxyssh.AuthorizeKeys(func(ctx ssh.Context) ([]ssh.PublicKey, error) {
 			container, err := FindUniqueContainer(opts.Client, opts.DockerLabelUser, ctx.User())
 			if err != nil {
 				return nil, err
@@ -80,7 +80,7 @@ func NewDockerProxyServer(logger utils.Logger, opts ServerOptions) (server *ssh.
 		server.PublicKeyHandler = nil
 	}
 
-	server = simpleproxy.AllowPortForwarding(logger, server, opts.ForwardPorts, opts.ReversePorts)
+	server = proxyssh.AllowPortForwarding(logger, server, opts.ForwardPorts, opts.ReversePorts)
 
 	return
 }

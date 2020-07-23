@@ -2,8 +2,9 @@
 
 !go.mod
 !go.sum
+!*.go
 !dockerproxy
-!simpleproxy
+!proxyssh
 !utils
 !testutils
 !_example

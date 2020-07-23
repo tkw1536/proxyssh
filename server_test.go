@@ -1,4 +1,4 @@
-package simpleproxy
+package proxyssh
 
 import (
 	"net"
@@ -24,7 +24,7 @@ var (
 func TestMain(m *testing.M) {
 
 	// create a new server and start listening
-	testServer = NewSimpleProxyServer(
+	testServer = NewproxysshServer(
 		testutils.TestLogger(),
 		ServerOptions{
 			Shell:         "/bin/bash",

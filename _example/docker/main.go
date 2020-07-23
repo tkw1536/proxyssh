@@ -6,8 +6,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/tkw1536/proxyssh"
 	"github.com/tkw1536/proxyssh/dockerproxy"
-	"github.com/tkw1536/proxyssh/simpleproxy"
 	"github.com/tkw1536/proxyssh/utils"
 
 	"github.com/docker/docker/client"
@@ -31,13 +31,13 @@ func main() {
 	})
 
 	// load rsa host key
-	_, err := simpleproxy.UseOrMakeHostKey(logger, server, HostKeyPath+"_rsa", simpleproxy.RSAAlgorithm)
+	_, err := proxyssh.UseOrMakeHostKey(logger, server, HostKeyPath+"_rsa", proxyssh.RSAAlgorithm)
 	if err != nil {
 		logger.Fatal(err)
 	}
 
 	// load ed25519 host key
-	_, err = simpleproxy.UseOrMakeHostKey(logger, server, HostKeyPath+"_ed25519", simpleproxy.ED25519Algorithm)
+	_, err = proxyssh.UseOrMakeHostKey(logger, server, HostKeyPath+"_ed25519", proxyssh.ED25519Algorithm)
 	if err != nil {
 		logger.Fatal(err)
 	}

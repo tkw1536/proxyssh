@@ -1,4 +1,4 @@
-package simpleproxy
+package proxyssh
 
 import (
 	"io/ioutil"

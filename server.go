@@ -1,5 +1,5 @@
-// Package simpleproxy provides a simple interface to make an ssh server.
-package simpleproxy
+// Package proxyssh provides a simple interface to make an ssh server.
+package proxyssh
 
 import (
 	"strings"
@@ -23,8 +23,8 @@ type ServerOptions struct {
 	IdleTimeout time.Duration
 }
 
-// NewSimpleProxyServer makes a new simple proxy server
-func NewSimpleProxyServer(logger utils.Logger, opts ServerOptions) (server *ssh.Server) {
+// NewproxysshServer makes a new simple proxy server
+func NewproxysshServer(logger utils.Logger, opts ServerOptions) (server *ssh.Server) {
 	server = &ssh.Server{
 		Handler: HandleCommand(logger, func(s ssh.Session) ([]string, error) {
 			command := s.Command()

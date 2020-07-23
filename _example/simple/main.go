@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/tkw1536/proxyssh/simpleproxy"
+	"github.com/tkw1536/proxyssh"
 	"github.com/tkw1536/proxyssh/utils"
 )
 
@@ -14,7 +14,7 @@ var logger = log.New(os.Stderr, "", log.LstdFlags)
 
 func main() {
 	// start the server
-	server := simpleproxy.NewSimpleProxyServer(logger, simpleproxy.ServerOptions{
+	server := proxyssh.NewproxysshServer(logger, proxyssh.ServerOptions{
 		ListenAddress: ListenAddress,
 		IdleTimeout:   time.Duration(IdleTimeout) * time.Second,
 		Shell:         Shell,
@@ -23,13 +23,13 @@ func main() {
 	})
 
 	// load rsa host key
-	_, err := simpleproxy.UseOrMakeHostKey(logger, server, HostKeyPath+"_rsa", simpleproxy.RSAAlgorithm)
+	_, err := proxyssh.UseOrMakeHostKey(logger, server, HostKeyPath+"_rsa", proxyssh.RSAAlgorithm)
 	if err != nil {
 		logger.Fatal(err)
 	}
 
 	// load ed25519 host key
-	_, err = simpleproxy.UseOrMakeHostKey(logger, server, HostKeyPath+"_ed25519", simpleproxy.ED25519Algorithm)
+	_, err = proxyssh.UseOrMakeHostKey(logger, server, HostKeyPath+"_ed25519", proxyssh.ED25519Algorithm)
 	if err != nil {
 		logger.Fatal(err)
 	}
