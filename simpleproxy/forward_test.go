@@ -9,7 +9,7 @@ import (
 	gossh "golang.org/x/crypto/ssh"
 )
 
-func TestForward(t *testing.T) {
+func TestPortForwardingForward(t *testing.T) {
 	t.Run("forward port forwarding works on an allowed port", func(t *testing.T) {
 		// make a new session with port forwarding
 		conn, _, err := testutils.NewTestServerSession(
@@ -24,7 +24,11 @@ func TestForward(t *testing.T) {
 
 		// start a new local listener
 		ll, le := net.Listen("tcp", forwardPortsAllow.String())
-		testutils.AcceptAllWith(ll, le, "success\n")
+		if le != nil {
+			t.Errorf("Failed to create test server: %s", err)
+			t.FailNow()
+		}
+		go testutils.TestTCPServe(ll, "success\n")
 		defer ll.Close()
 
 		// dial
@@ -61,7 +65,11 @@ func TestForward(t *testing.T) {
 
 		// start a new local server
 		ll, le := net.Listen("tcp", forwardPortsDeny.String())
-		testutils.AcceptAllWith(ll, le, "success\n")
+		if le != nil {
+			t.Errorf("Failed to create test server: %s", err)
+			t.FailNow()
+		}
+		go testutils.TestTCPServe(ll, "success\n")
 		defer ll.Close()
 
 		// dial
@@ -73,7 +81,7 @@ func TestForward(t *testing.T) {
 	})
 }
 
-func TestReverse(t *testing.T) {
+func TestPortForwardingReverse(t *testing.T) {
 	t.Run("reverse port forwarding works on an allowed port", func(t *testing.T) {
 		// make a new session with port forwarding
 		conn, _, err := testutils.NewTestServerSession(
@@ -88,7 +96,11 @@ func TestReverse(t *testing.T) {
 
 		// start a server to listen to
 		ll, le := conn.Listen("tcp", reversePortsAllow.String())
-		testutils.AcceptAllWith(ll, le, "success\n")
+		if le != nil {
+			t.Errorf("Failed to create test server: %s", err)
+			t.FailNow()
+		}
+		go testutils.TestTCPServe(ll, "success\n")
 		defer ll.Close()
 
 		// dial

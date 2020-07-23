@@ -25,23 +25,17 @@ func NewTestListenAddress() string {
 	return net.JoinHostPort(listener.Addr().(*net.TCPAddr).IP.String(), strconv.Itoa(listener.Addr().(*net.TCPAddr).Port))
 }
 
-// AcceptAllWith accepts anything sent to the listener with a constant respone
+// TestTCPServe accepts anything sent to the listener with a constant respone
 // if err is not nil, panic()s.
-func AcceptAllWith(listener net.Listener, err error, response string) {
-	// make a listener
-	if err != nil {
-		panic(err)
-	}
-
-	// respond to everything with 'success'
-	go func() {
-		for {
-			client, _ := listener.Accept()
-			if client == nil {
-				continue
-			}
-			client.Write([]byte(response))
-			client.Close()
+func TestTCPServe(listener net.Listener, response string) {
+	// respond to everything with a constant response
+	responseBytes := []byte(response)
+	for {
+		client, _ := listener.Accept()
+		if client == nil {
+			continue
 		}
-	}()
+		client.Write(responseBytes)
+		client.Close()
+	}
 }
