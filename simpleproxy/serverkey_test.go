@@ -2,7 +2,6 @@ package simpleproxy
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -68,24 +67,11 @@ cYkgpFn+ZrD7OFj3d/DbO38redzOl6Bi9u0VPCsyw6ejjGuu53ZJuws1CV8vSLP3
 
 		t.Run(fmt.Sprintf("read an existing %s key", tt.algorithm), func(t *testing.T) {
 			// create a temporary file
-			tmpFile, err := ioutil.TempFile("", "privkey.pem")
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer os.Remove(tmpFile.Name())
-
-			// write in the sample key
-			if _, err := tmpFile.Write([]byte(tt.privateKey)); err != nil {
-				t.Fatal(err)
-			}
-
-			// close the file
-			if err := tmpFile.Close(); err != nil {
-				t.Fatal(err)
-			}
+			tmpFile, cleanup := testutils.WriteTempFile("privkey.pem", tt.privateKey)
+			defer cleanup()
 
 			// test actual: try to load the key
-			signer, err := ReadOrMakeHostKey(testutils.TestLogger(), tmpFile.Name(), tt.algorithm)
+			signer, err := ReadOrMakeHostKey(testutils.TestLogger(), tmpFile, tt.algorithm)
 			if err != nil {
 				t.Errorf("ReadOrMakeHostKey() error = %v, wantError = nil", err)
 			}
@@ -101,14 +87,11 @@ cYkgpFn+ZrD7OFj3d/DbO38redzOl6Bi9u0VPCsyw6ejjGuu53ZJuws1CV8vSLP3
 		t.Run(fmt.Sprintf("make a new %s key", tt.algorithm), func(t *testing.T) {
 			// create a new temp file path
 			// by making a file, and then immediatly removing it
-			tmpFile, err := ioutil.TempFile("", "privkey.pem")
-			if err != nil {
-				t.Fatal(err)
-			}
-			os.Remove(tmpFile.Name())
+			tmpFile, cleanup := testutils.WriteTempFile("privkey.pem", "")
+			cleanup()
 
 			// test actual: ReadOrMakeHostKey should make a new file
-			signer, err := ReadOrMakeHostKey(testutils.TestLogger(), tmpFile.Name(), tt.algorithm)
+			signer, err := ReadOrMakeHostKey(testutils.TestLogger(), tmpFile, tt.algorithm)
 			if err != nil {
 				t.Errorf("ReadOrMakeHostKey() error = %v, wantError = nil", err)
 			}
@@ -116,22 +99,18 @@ cYkgpFn+ZrD7OFj3d/DbO38redzOl6Bi9u0VPCsyw6ejjGuu53ZJuws1CV8vSLP3
 				t.Errorf("ReadOrMakeHostKey() signer = nil, wantSigner != nil")
 			}
 
-			if _, err := os.Stat(tmpFile.Name()); os.IsNotExist(err) {
-				t.Errorf("ReadOrMakeHostKey(): %s was not created", tmpFile.Name())
+			if _, err := os.Stat(tmpFile); os.IsNotExist(err) {
+				t.Errorf("ReadOrMakeHostKey(): %s was not created", tmpFile)
 			}
 		})
 
 		t.Run(fmt.Sprintf("error reading %s key", tt.algorithm), func(t *testing.T) {
-			// create a temporary file
-			// and close it to make sure it's empty (invalid key)
-			tmpFile, err := ioutil.TempFile("", "privkey.pem")
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer os.Remove(tmpFile.Name())
+			// create a temporary file, and write an invalid key into i
+			tmpFile, cleanup := testutils.WriteTempFile("privkey.pem", "not-a-secret-key")
+			defer cleanup()
 
 			// test actual: ReadOrMakeHostKey should error
-			signer, err := ReadOrMakeHostKey(testutils.TestLogger(), tmpFile.Name(), tt.algorithm)
+			signer, err := ReadOrMakeHostKey(testutils.TestLogger(), tmpFile, tt.algorithm)
 			if err == nil {
 				t.Errorf("ReadOrMakeHostKey() error = %v, wantError != nil", err)
 			}
@@ -139,9 +118,10 @@ cYkgpFn+ZrD7OFj3d/DbO38redzOl6Bi9u0VPCsyw6ejjGuu53ZJuws1CV8vSLP3
 				t.Errorf("ReadOrMakeHostKey() signer != nil, wantSigner = nil")
 			}
 
-			if _, err := os.Stat(tmpFile.Name()); os.IsNotExist(err) {
-				t.Errorf("ReadOrMakeHostKey(): %s was deleted", tmpFile.Name())
+			if _, err := os.Stat(tmpFile); os.IsNotExist(err) {
+				t.Errorf("ReadOrMakeHostKey(): %s was deleted", tmpFile)
 			}
 		})
+
 	}
 }
