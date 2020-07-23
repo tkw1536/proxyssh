@@ -1,6 +1,7 @@
 package simpleproxy
 
 import (
+	"net"
 	"os"
 	"testing"
 
@@ -32,7 +33,12 @@ func TestMain(m *testing.M) {
 			ListenAddress: testutils.NewTestListenAddress(),
 		},
 	)
-	go testServer.ListenAndServe()
+	// start listening and then serving
+	testListener, err := net.Listen("tcp", testServer.Addr)
+	if err != nil {
+		panic(err)
+	}
+	go testServer.Serve(testListener)
 
 	// run the code
 	code := m.Run()
