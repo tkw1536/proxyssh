@@ -2,6 +2,7 @@ package simpleproxy
 
 import (
 	"testing"
+	"time"
 
 	"github.com/tkw1536/proxyssh/testutils"
 	gossh "golang.org/x/crypto/ssh"
@@ -83,5 +84,59 @@ func TestCommand(t *testing.T) {
 			}
 		})
 	}
+}
 
+func TestCommandIsKilled(t *testing.T) {
+	waitKillTimeout := 1 * time.Second
+	t.Run("closing the network connection kills the process", func(t *testing.T) {
+		// run a new session
+		client, session, err := testutils.NewTestServerSession(testServer.Addr, gossh.ClientConfig{})
+		defer client.Close()
+		if err != nil {
+			t.Errorf("Unable to create test server session: %s", err)
+			t.FailNow()
+		}
+
+		// process
+		process, err := testutils.GetTestSessionProcess(session)
+		if err != nil {
+			t.Errorf("Unable to get test session pid: %s", err)
+			t.FailNow()
+		}
+
+		// close the client
+		client.Close()
+		time.Sleep(waitKillTimeout)
+
+		// check if the process ist still alive
+		if testutils.TestProcessAlive(process) {
+			t.Errorf("TestCommandKilled(): Process still alive")
+		}
+	})
+
+	t.Run("closing the session kills the process", func(t *testing.T) {
+		// run a new session
+		client, session, err := testutils.NewTestServerSession(testServer.Addr, gossh.ClientConfig{})
+		defer client.Close()
+		if err != nil {
+			t.Errorf("Unable to create test server session: %s", err)
+			t.FailNow()
+		}
+
+		// process
+		process, err := testutils.GetTestSessionProcess(session)
+		if err != nil {
+			t.Errorf("Unable to get test session pid: %s", err)
+			t.FailNow()
+		}
+
+		// close the session
+		session.Close()
+		time.Sleep(waitKillTimeout)
+
+		// check if the process ist still alive
+		if testutils.TestProcessAlive(process) {
+			t.Errorf("TestCommandKilled(): Process still alive")
+		}
+	})
 }

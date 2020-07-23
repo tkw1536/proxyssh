@@ -3,7 +3,12 @@ package testutils
 import (
 	"bytes"
 	"net"
+	"os"
+	"strconv"
+	"strings"
+	"syscall"
 
+	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -28,6 +33,36 @@ func NewTestServerSession(addr string, opts ssh.ClientConfig) (*ssh.Client, *ssh
 	}
 
 	return conn, session, err
+}
+
+// GetTestSessionProcess returns the process belonging to a test session
+func GetTestSessionProcess(session *ssh.Session) (*os.Process, error) {
+	// get the pid of the session
+	pidBytes, err := session.Output("echo $$")
+	if err == nil {
+		return nil, errors.Wrap(err, "Unable to get pid via session")
+	}
+
+	// get the int of the pid
+	pid, err := strconv.ParseInt(strings.TrimSpace(string(pidBytes)), 10, 32)
+	if err != nil {
+		return nil, errors.Wrap(err, "pid was not an int")
+	}
+
+	// get the process itself
+	proc, err := os.FindProcess(int(pid))
+	if err != nil {
+		return nil, errors.Wrap(err, "Can not find process")
+	}
+
+	// return the process
+	return proc, err
+}
+
+// TestProcessAlive checks if a process is alive
+func TestProcessAlive(proc *os.Process) (res bool) {
+	defer func() { recover() }()
+	return proc.Signal(syscall.Signal(0)) == nil
 }
 
 // RunTestServerCommand runs a command on the test server and returns its stdout, stderr and code
