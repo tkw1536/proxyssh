@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
 	"syscall"
 	"unsafe"
 
@@ -61,7 +62,7 @@ type sshCommand struct {
 	cmdPty *os.File
 
 	// finish everything once
-	finish utils.Once
+	finish sync.Once
 }
 
 // newSSHCommand returns a new ssh command
@@ -217,12 +218,12 @@ func (c *sshCommand) setWinsize(w, h int) {
 		uintptr(unsafe.Pointer(&struct{ h, w, x, y uint16 }{uint16(h), uint16(w), 0, 0})))
 }
 
-// finalize finalizes this SSHCommand session and returns true if successfull.
+// finalize finalizes this SSHCommand session.
 // This function can be safely called multiple times, in different goroutines.
-// If the session was already finalized, this function returns false and does nothing.
+// If the session was already finalized, this function does nothing.
 // Finalizing a session means setting a status code and, if err is not nil, print it to the stderr of the session and the log.
-func (c *sshCommand) finalize(status int, err error) bool {
-	return c.finish.Once(func() {
+func (c *sshCommand) finalize(status int, err error) {
+	c.finish.Do(func() {
 		// write error message to console
 		if err != nil {
 			io.WriteString(c.Stderr(), err.Error()+"\n")
