@@ -6,8 +6,21 @@ import (
 )
 
 // WriteTempFile writes content into a temporary file.
-// The caller is expected to call cleanup when done with the file.
-// If something goes wrong, calls panic().
+//
+// Pattern is used to generate the filename of the file, it is passed on to "ioutil".Tempfile.
+// Content is written as a string into the file.
+//
+// This function returns a pair of (filepath, cleanup) where
+// filepath is the path to the temporary file and
+// cleanup is a function that removes the temporary file.
+//
+// It is the callers responsibility to call the cleanup function.
+// A typical invocation of this function is something like:
+//
+//   tempfile, cleanup = WriteTempFile(pattern, content)
+//   defer cleanup()
+//
+// If something goes wrong during the creation of the temporary file, panic() is called.
 func WriteTempFile(pattern, content string) (filepath string, cleanup func()) {
 	// Create a temporary file
 	tmpFile, err := ioutil.TempFile("", pattern)

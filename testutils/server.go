@@ -5,8 +5,13 @@ import (
 	"strconv"
 )
 
-// NewTestListenAddress returns a new address for a test server to listen under
-// if something goes wrong, calls panic().
+// NewTestListenAddress returns a new unused address that can be used
+// to start a listener on.
+//
+// The address is guaranteed to not be used by any other server, and listens only on the loopback interface.
+// It will typically be something like "127.0.0.1:12345", but is not guaranteed to be of this form.
+//
+// If no address is available, or something unexpected happens, panic() is called.
 func NewTestListenAddress() string {
 	// fetch a new unused address from the kernel
 	addr, err := net.ResolveTCPAddr("tcp", "localhost:0")
@@ -14,20 +19,28 @@ func NewTestListenAddress() string {
 		panic(err)
 	}
 
-	// check that it is actually open
+	// open a listener, and get the actual address
 	listener, err := net.ListenTCP("tcp", addr)
 	if err != nil {
 		panic(err)
 	}
+	address := listener.Addr().(*net.TCPAddr)
 	defer listener.Close()
 
-	// return it
-	return net.JoinHostPort(listener.Addr().(*net.TCPAddr).IP.String(), strconv.Itoa(listener.Addr().(*net.TCPAddr).Port))
+	// join it back into a string
+	return net.JoinHostPort(address.IP.String(), strconv.Itoa(address.Port))
 }
 
-// TestTCPServe accepts anything sent to the listener with a constant respone
-// if err is not nil, panic()s.
-func TestTCPServe(listener net.Listener, response string) {
+// TCPConstantTestResponse starts accepting connections on the listener.
+// It then sends a constant response and closes the accepted connection.
+//
+// This function performs blocking work on the goroutine it was called on.
+// As such, it should typically be called like:
+//
+//  listener, err := net.Dial("tcp", address)
+//  go TCPConstantTestResponse(listener, response)
+//  defer listener.Close()
+func TCPConstantTestResponse(listener net.Listener, response string) {
 	// respond to everything with a constant response
 	responseBytes := []byte(response)
 	for {

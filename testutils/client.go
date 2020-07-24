@@ -2,27 +2,41 @@ package testutils
 
 import (
 	"bytes"
-	"crypto/rand"
-	"crypto/rsa"
 	"net"
-	"os"
-	"strconv"
-	"strings"
-	"syscall"
 
-	"github.com/pkg/errors"
 	"golang.org/x/crypto/ssh"
 )
 
-// NewTestServerSession makes a new test server session
-func NewTestServerSession(addr string, opts ssh.ClientConfig) (*ssh.Client, *ssh.Session, error) {
-	if opts.HostKeyCallback == nil {
-		opts.HostKeyCallback = func(hostname string, remote net.Addr, key ssh.PublicKey) error {
+// NewTestServerSession connects and starts a new ssh session on the sever listening at address.
+//
+// This function sets reasonable defaults for the options.
+// If options.HostKeyCallback is not set, sets it to a function that accepts every host key.
+// If options.User is the empty string, uses the username "user".
+// This function can thus be called with an empty options struct.
+//
+// If no error occurs, the function expects the caller the Close() method on the client.
+// If an error occurs during initialization, the client and session will be closed and an error will be returned.
+// A typical invocation of this function should look like:
+//
+//  client, session, err := NewTestServerSession(address, ssh.ClientConfig{})
+//  if err != nil {
+//  	return err
+//  }
+//  defer client.Close()
+//
+func NewTestServerSession(address string, options ssh.ClientConfig) (*ssh.Client, *ssh.Session, error) {
+	// set default options
+	if options.HostKeyCallback == nil {
+		options.HostKeyCallback = func(hostname string, remote net.Addr, key ssh.PublicKey) error {
 			return nil
 		}
 	}
+	if options.User == "" {
+		options.User = "user"
+	}
+
 	// create a new client
-	conn, err := ssh.Dial("tcp", addr, &opts)
+	conn, err := ssh.Dial("tcp", address, &options)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -37,10 +51,16 @@ func NewTestServerSession(addr string, opts ssh.ClientConfig) (*ssh.Client, *ssh
 	return conn, session, err
 }
 
-// RunTestServerCommand runs a command on the test server and returns its stdout, stderr and code
-func RunTestServerCommand(addr string, opts ssh.ClientConfig, command, stdin string) (stdout string, stderr string, code int, err error) {
+// RunTestServerCommand runs a command on the ssh server listening at address, and returns its standard output and input.
+// The address and options parameters are passed to NewTestServerSession.
+// The command being run is determined by command.
+// The standard input passed to the command is determined from stdin.
+//
+// The output of the command (consisting of stdout and stderr), along with it's exit code will be returned.
+// If something goes wrong running the command, an error will be returned.
+func RunTestServerCommand(address string, options ssh.ClientConfig, command, stdin string) (stdout string, stderr string, code int, err error) {
 	// create a new session
-	client, session, err := NewTestServerSession(addr, opts)
+	client, session, err := NewTestServerSession(address, options)
 	if err != nil {
 		return
 	}
@@ -72,49 +92,4 @@ func RunTestServerCommand(addr string, opts ssh.ClientConfig, command, stdin str
 	stderr = stderrBuf.String()
 
 	return
-}
-
-// GenerateRSATestKeyPair generates a new rsa keypair to be used for testing
-// If generation fails, calls panic()
-func GenerateRSATestKeyPair() (ssh.Signer, ssh.PublicKey) {
-	privkey, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		panic(err)
-	}
-	signer, err := ssh.NewSignerFromKey(privkey)
-	if err != nil {
-		panic(err)
-	}
-
-	return signer, signer.PublicKey()
-}
-
-// GetTestSessionProcess returns the process belonging to a test session
-func GetTestSessionProcess(session *ssh.Session) (*os.Process, error) {
-	// get the pid of the session
-	pidBytes, err := session.Output("echo $$")
-	if err == nil {
-		return nil, errors.Wrap(err, "Unable to get pid via session")
-	}
-
-	// get the int of the pid
-	pid, err := strconv.ParseInt(strings.TrimSpace(string(pidBytes)), 10, 32)
-	if err != nil {
-		return nil, errors.Wrap(err, "pid was not an int")
-	}
-
-	// get the process itself
-	proc, err := os.FindProcess(int(pid))
-	if err != nil {
-		return nil, errors.Wrap(err, "Can not find process")
-	}
-
-	// return the process
-	return proc, err
-}
-
-// TestProcessAlive checks if a process is alive
-func TestProcessAlive(proc *os.Process) (res bool) {
-	defer func() { recover() }()
-	return proc.Signal(syscall.Signal(0)) == nil
 }

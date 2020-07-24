@@ -28,7 +28,7 @@ func TestPortForwardingForward(t *testing.T) {
 			t.Errorf("Failed to create test server: %s", err)
 			t.FailNow()
 		}
-		go testutils.TestTCPServe(ll, "success\n")
+		go testutils.TCPConstantTestResponse(ll, "success\n")
 		defer ll.Close()
 
 		// dial
@@ -69,7 +69,7 @@ func TestPortForwardingForward(t *testing.T) {
 			t.Errorf("Failed to create test server: %s", err)
 			t.FailNow()
 		}
-		go testutils.TestTCPServe(ll, "success\n")
+		go testutils.TCPConstantTestResponse(ll, "success\n")
 		defer ll.Close()
 
 		// dial
@@ -100,7 +100,7 @@ func TestPortForwardingReverse(t *testing.T) {
 			t.Errorf("Failed to create test server: %s", err)
 			t.FailNow()
 		}
-		go testutils.TestTCPServe(ll, "success\n")
+		go testutils.TCPConstantTestResponse(ll, "success\n")
 		defer ll.Close()
 
 		// dial
