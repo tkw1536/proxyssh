@@ -18,6 +18,7 @@ type SSHSessionOrContext interface {
 }
 
 // Logger is an interface for "log".Logger
+// Logger is assumed to be goroutine-safe.
 type Logger interface {
 	Print(v ...interface{})
 	Printf(format string, v ...interface{})

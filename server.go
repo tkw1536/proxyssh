@@ -13,20 +13,23 @@ import (
 type ServerOptions struct {
 	// ListenAddress is the address to listen on
 	ListenAddress string
-	// Shell is the shell to run
+	// Shell is the shell to use for the server
+	// This is called like `shell -c "command"`` when an ssh command is provided or like `shell` when not.
+	// This is passed to exec.LookPath()
 	Shell string
-	// ForwardPorts to allow forwarding for
-	ForwardPorts []utils.NetworkAddress
-	// ReversePorts to allow forwarding for
-	ReversePorts []utils.NetworkAddress
+	// ForwardAddresses are addresses that port forwarding is allowed for.
+	ForwardAddresses []utils.NetworkAddress
+	// ReverseAddresses are addresses that reverse port forwarding is allowed for.
+	ReverseAddresses []utils.NetworkAddress
 	// IdleTimeout is the timeout after which a connection is considered idle
 	IdleTimeout time.Duration
 }
 
-// NewproxysshServer makes a new simple proxy server
-func NewproxysshServer(logger utils.Logger, opts ServerOptions) (server *ssh.Server) {
+// NewProxySSHServer makes a new simple proxy server with the given logger and options.
+// It returns a new server that was created.
+func NewProxySSHServer(logger utils.Logger, opts ServerOptions) (server *ssh.Server) {
 	server = &ssh.Server{
-		Handler: HandleCommand(logger, func(s ssh.Session) ([]string, error) {
+		Handler: HandleShellCommand(logger, func(s ssh.Session) ([]string, error) {
 			command := s.Command()
 			if len(command) == 0 {
 				// no arguments were provided => run /bin/bash
@@ -41,7 +44,7 @@ func NewproxysshServer(logger utils.Logger, opts ServerOptions) (server *ssh.Ser
 		Addr:        opts.ListenAddress,
 		IdleTimeout: opts.IdleTimeout,
 	}
-	server = AllowPortForwarding(logger, server, opts.ForwardPorts, opts.ReversePorts)
+	server = AllowPortForwarding(logger, server, opts.ForwardAddresses, opts.ReverseAddresses)
 
 	return
 }

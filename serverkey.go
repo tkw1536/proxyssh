@@ -11,9 +11,19 @@ import (
 	gossh "golang.org/x/crypto/ssh"
 )
 
-// UseOrMakeHostKey uses or makes a host key
-func UseOrMakeHostKey(logger utils.Logger, server *ssh.Server, path string, algorithm HostKeyAlgorithm) (*ssh.Server, error) {
-	key, err := ReadOrMakeHostKey(logger, path, algorithm)
+// UseOrMakeHostKey attempts to load a host key from the given privateKeyPath.
+// If the path does not exist, a new host key is generated.
+// It then adds this hostkey to the priovided server.
+//
+// All parameters except the server are passed to ReadOrMakeHostKey.
+// Please see the appropriate documentation for that function.
+//
+// logger is called whenever a new host key algorithm is being generated.
+//
+// The server returned from this function is returned for convenience only.
+// It is the same server that was originally passed.
+func UseOrMakeHostKey(logger utils.Logger, server *ssh.Server, privateKeyPath string, algorithm HostKeyAlgorithm) (*ssh.Server, error) {
+	key, err := ReadOrMakeHostKey(logger, privateKeyPath, algorithm)
 	if err != nil {
 		return server, err
 	}
@@ -23,25 +33,31 @@ func UseOrMakeHostKey(logger utils.Logger, server *ssh.Server, path string, algo
 	return server, nil
 }
 
-// ReadOrMakeHostKey attempts to read an ssh host key from the given path or create a new one
-func ReadOrMakeHostKey(logger utils.Logger, path string, algorithm HostKeyAlgorithm) (key gossh.Signer, err error) {
+// ReadOrMakeHostKey attempts to load a host key from the given privateKeyPath.
+// If the path does not exist, a new host key is generated.
+//
+// This function assumes that if there is a host key in privateKeyPath it uses the provided HostKeyAlgorithm.
+// It makes no attempt at verifiying this; the key mail fail to load and return an error, or it may load incorrect data.
+//
+// logger is called whenever a new host key algorithm is being generated.
+func ReadOrMakeHostKey(logger utils.Logger, privateKeyPath string, algorithm HostKeyAlgorithm) (key gossh.Signer, err error) {
 	hostKey := newHostKey(algorithm)
 	// path doesn't exist => generate a new key there!
-	if _, e := os.Stat(path); os.IsNotExist(e) {
-		err = makeHostKey(logger, hostKey, path)
+	if _, e := os.Stat(privateKeyPath); os.IsNotExist(e) {
+		err = makeHostKey(logger, hostKey, privateKeyPath)
 		if err != nil {
 			err = errors.Wrap(err, "Unable to generate new host key")
 			return
 		}
 	}
-	err = loadHostKey(logger, hostKey, path)
+	err = loadHostKey(logger, hostKey, privateKeyPath)
 	if err != nil {
 		return nil, err
 	}
 	return hostKey.Signer()
 }
 
-// HostKeyAlgorithm is an algorithm for a host key
+// HostKeyAlgorithm is an enumerated value that represents a specific algorithm used for host keys.
 type HostKeyAlgorithm string
 
 const (
@@ -97,7 +113,7 @@ func loadHostKey(logger utils.Logger, key hostKey, path string) (err error) {
 		return
 	}
 
-	// load the
+	// decode the pem and unmarshal it
 	privateKeyPEM, _ := pem.Decode(privateKeyBytes)
 	if privateKeyPEM == nil {
 		err = errors.New("pem.Decode() returned nil")

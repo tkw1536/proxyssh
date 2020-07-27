@@ -24,13 +24,13 @@ var (
 func TestMain(m *testing.M) {
 
 	// create a new server and start listening
-	testServer = NewproxysshServer(
+	testServer = NewProxySSHServer(
 		testutils.TestLogger(),
 		ServerOptions{
-			Shell:         "/bin/bash",
-			ForwardPorts:  []utils.NetworkAddress{forwardPortsAllow},
-			ReversePorts:  []utils.NetworkAddress{reversePortsAllow},
-			ListenAddress: testutils.NewTestListenAddress(),
+			Shell:            "/bin/bash",
+			ForwardAddresses: []utils.NetworkAddress{forwardPortsAllow},
+			ReverseAddresses: []utils.NetworkAddress{reversePortsAllow},
+			ListenAddress:    testutils.NewTestListenAddress(),
 		},
 	)
 	// start listening and then serving

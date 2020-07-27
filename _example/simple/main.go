@@ -14,12 +14,12 @@ var logger = log.New(os.Stderr, "", log.LstdFlags)
 
 func main() {
 	// start the server
-	server := proxyssh.NewproxysshServer(logger, proxyssh.ServerOptions{
-		ListenAddress: ListenAddress,
-		IdleTimeout:   time.Duration(IdleTimeout) * time.Second,
-		Shell:         Shell,
-		ForwardPorts:  ForwardPorts,
-		ReversePorts:  ReversePorts,
+	server := proxyssh.NewProxySSHServer(logger, proxyssh.ServerOptions{
+		ListenAddress:    ListenAddress,
+		IdleTimeout:      time.Duration(IdleTimeout) * time.Second,
+		Shell:            Shell,
+		ForwardAddresses: ForwardPorts,
+		ReverseAddresses: ReversePorts,
 	})
 
 	// load rsa host key

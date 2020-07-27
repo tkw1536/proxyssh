@@ -1,9 +1,10 @@
 package dockerproxy
 
 import (
-	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
+	"strings"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
@@ -93,17 +94,28 @@ func FindContainerKeys(cli *client.Client, container types.Container, opts Docke
 		return
 	}
 
-	// grab the bytes
-	content, _, err := cli.CopyFromContainer(context.Background(), container.ID, filePath)
-	if err != nil {
+	// if there isn't a filepath, done
+	if len(filePath) == 0 {
 		return
 	}
-	defer content.Close()
 
-	// read all the keys from the content
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(content)
-	keys = append(keys, parseAllKeys(buf.Bytes())...)
+	filePathAry := strings.Split(filePath, ";")
+	for _, path := range filePathAry {
+		// grab the bytes, and ignore errors
+		// so that non-existent paths do not fail
+		content, _, err := cli.CopyFromContainer(context.Background(), container.ID, path)
+		if err != nil {
+			continue
+		}
+		defer content.Close()
+
+		// read all the keys from the content
+		bytes, err := ioutil.ReadAll(content)
+		if err != nil {
+			continue
+		}
+		keys = append(keys, parseAllKeys(bytes)...)
+	}
 
 	return
 }

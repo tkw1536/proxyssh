@@ -37,7 +37,7 @@ type ServerOptions struct {
 // NewDockerProxyServer makes a new docker proxy server
 func NewDockerProxyServer(logger utils.Logger, opts ServerOptions) (server *ssh.Server) {
 	server = &ssh.Server{
-		Handler: proxyssh.HandleCommand(logger, func(s ssh.Session) (command []string, err error) {
+		Handler: proxyssh.HandleShellCommand(logger, func(s ssh.Session) (command []string, err error) {
 			// no commands allowed for security reasons
 			command = s.Command()
 			if len(command) == 0 {
@@ -58,7 +58,7 @@ func NewDockerProxyServer(logger utils.Logger, opts ServerOptions) (server *ssh.
 			command = DockerExec(s, container.ID, command, "", "")
 			return
 		}),
-		PublicKeyHandler: proxyssh.AuthorizeKeys(func(ctx ssh.Context) ([]ssh.PublicKey, error) {
+		PublicKeyHandler: proxyssh.AuthorizeKeys(logger, func(ctx ssh.Context) ([]ssh.PublicKey, error) {
 			container, err := FindUniqueContainer(opts.Client, opts.DockerLabelUser, ctx.User())
 			if err != nil {
 				return nil, err

@@ -16,16 +16,20 @@ import (
 	"github.com/tkw1536/proxyssh/utils"
 )
 
-// HandleCommand creates an ssh.Handler that runs a given command on the real system
-// commander is a function that given an ssh session returns the command to be run.
-func HandleCommand(logger utils.Logger, commander func(session ssh.Session) (command []string, err error)) ssh.Handler {
+// HandleShellCommand creates an ssh.Handler that runs a shell command for every ssh.Session that connects
+//
+// shellCommand is a function that is called for every session and should return the shell command to run along with all arguments.
+// When err is not nil, the first value of the command is passed to exec.LookPath.
+//
+// logger is called for every significant event for every connection.
+func HandleShellCommand(logger utils.Logger, shellCommand func(session ssh.Session) (command []string, err error)) ssh.Handler {
 	return func(session ssh.Session) {
 		// logging
 		utils.FmtSSHLog(logger, session, "session_start %s", session.User())
 		defer utils.FmtSSHLog(logger, session, "session_end")
 
 		// find the command to run
-		command, err := commander(session)
+		command, err := shellCommand(session)
 		if err != nil {
 			abortsession(logger, session, errors.Wrap(err, "Failed to find command"))
 			return

@@ -15,10 +15,13 @@ var (
 )
 
 func TestAuthorizeKeys(t *testing.T) {
-	testServer.PublicKeyHandler = AuthorizeKeys(func(ctx ssh.Context) (keys []ssh.PublicKey, err error) {
+	testServer.PublicKeyHandler = AuthorizeKeys(testutils.TestLogger(), func(ctx ssh.Context) (keys []ssh.PublicKey, err error) {
 		switch ctx.User() {
+		// user1 has keys allowedPublicKeyA dn allowedPublicKeyB
 		case "user1":
 			keys = []ssh.PublicKey{allowedPublicKeyA, allowedPublicKeyB}
+
+		// user2 has keys allowedPublicKeyB
 		case "user2":
 			keys = []ssh.PublicKey{allowedPublicKeyA}
 		}

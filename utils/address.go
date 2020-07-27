@@ -67,7 +67,8 @@ func (p *NetworkAddressListVar) String() string {
 	return strings.Join(ports, ",")
 }
 
-// Set sets the value of this NetworkAddressListVar.
+// Set sets the value of this NetworkAddressListVar
+// This function is intedned to be called by flag.Var()
 func (p *NetworkAddressListVar) Set(value string) (err error) {
 	newPort, err := ParseNetworkAddress(value)
 	if err != nil {
