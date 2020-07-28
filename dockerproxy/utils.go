@@ -13,8 +13,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-// DockerExec wraps a command into a 'docker exec'
-// this depends on the 'docker' executable being available.
+// DockerExec creates a command  that executes a process in a given docker container
+//
+// The command returned will depend on the 'docker' executable being availabel on the underlying system.
+// The commnd will not prefix the entrypoing.
 func DockerExec(s ssh.Session, containerID string, command []string, workdir string, user string) (exec []string) {
 	exec = []string{"docker", "exec", "--interactive"}
 
@@ -39,9 +41,14 @@ func DockerExec(s ssh.Session, containerID string, command []string, workdir str
 	return
 }
 
+// ErrContainerNotUnique is an error that is returned when a container is not unique
+var ErrContainerNotUnique = errors.New("No unique container found")
+
 // FindUniqueContainer finds a unique running container with the given label key and value
-// If there is no unique container fullfilling this condition, returns an error.
-func FindUniqueContainer(cli *client.Client, key string, value string) (types.Container, error) {
+//
+// If there is no unique runing container, returns ErrContainerNotUnique.
+// If something goes wrong, other errors may be returned.
+func FindUniqueContainer(cli *client.Client, key string, value string) (container types.Container, err error) {
 	// Setup a filter for a running container with the given key/value label
 	Filters := filters.NewArgs()
 	Filters.Add("label", fmt.Sprintf("%s=%s", key, value))
@@ -55,65 +62,64 @@ func FindUniqueContainer(cli *client.Client, key string, value string) (types.Co
 		return types.Container{}, errors.Wrap(err, "Unable to list containers")
 	}
 
-	// make sure there is *exactly* one
+	// if there isn't exactly one container
+	// we bail out
+
 	if len(containers) != 1 {
-		return types.Container{}, errors.New("Found more than a single container")
+		err = ErrContainerNotUnique
+		return
 	}
 
 	return containers[0], nil
 }
 
-// DockerSSHAuthOptions represents options for docker ssh auth
+// DockerSSHAuthOptions contain options that configure authentication via ssh
 type DockerSSHAuthOptions struct {
-	// label that may contain a key
+	// If set, check if a candidate container contains an ssh key in the provided label
 	LabelKey string
 
-	// label that may contain the path to a file within the container
+	// If set, check if a candidate container contains an authorized_keys file at the provided path(s)
+	// Paths may be an array seperated by commas.
 	LabelKeypath string
 }
 
-// FindContainerKeys finds the keys in a certain docker container
-// silences all errors, and will return an empty slice instead.
-func FindContainerKeys(cli *client.Client, container types.Container, opts DockerSSHAuthOptions) (keys []ssh.PublicKey) {
-	// check if we have a label
-	if opts.LabelKey != "" {
-		keyString, hasKey := container.Labels[opts.LabelKey]
-		if hasKey {
-			keys = parseAllKeys([]byte(keyString))
-		}
+// FindContainerKeys finds the public keys desired by a particular container and returns them
+//
+// Location of stored credentials is determined by options.
+//
+// This function will ignore all errors and or invalid values.
+func FindContainerKeys(cli *client.Client, container types.Container, options DockerSSHAuthOptions) (keys []ssh.PublicKey) {
+
+	// Check the key label of a provided container for ssh public keys
+	// Note that if LabelKey is "", hasKey will return false because a docker label can not be blank.
+	keyString, hasKey := container.Labels[options.LabelKey]
+	if hasKey && keyString != "" {
+		keys = parseAllKeys([]byte(keyString))
 	}
 
-	// if we have a keypath label we need to do more work
-	if opts.LabelKeypath == "" {
+	// Check the filepath label and if it exists and is non-empty
+	// we can proceed to try and get each file
+
+	filePath, hasFilePath := container.Labels[options.LabelKeypath]
+	if !hasFilePath || filePath == "" {
 		return
 	}
 
-	// read from filepath
-	filePath, hasFilePath := container.Labels[opts.LabelKeypath]
-	if !hasFilePath {
-		return
-	}
+	// iterate over all files listed in the label and try to read the file pointed to by each one.
+	// If something goes wrong, ignore the error and skip ahead to the next one.
+	for _, path := range strings.Split(filePath, ",") {
 
-	// if there isn't a filepath, done
-	if len(filePath) == 0 {
-		return
-	}
-
-	filePathAry := strings.Split(filePath, ";")
-	for _, path := range filePathAry {
-		// grab the bytes, and ignore errors
-		// so that non-existent paths do not fail
 		content, _, err := cli.CopyFromContainer(context.Background(), container.ID, path)
 		if err != nil {
 			continue
 		}
 		defer content.Close()
 
-		// read all the keys from the content
 		bytes, err := ioutil.ReadAll(content)
 		if err != nil {
 			continue
 		}
+
 		keys = append(keys, parseAllKeys(bytes)...)
 	}
 
@@ -121,6 +127,7 @@ func FindContainerKeys(cli *client.Client, container types.Container, opts Docke
 }
 
 // parseAllKeys parses all keys from the given list of bytes
+// ignores all errors
 func parseAllKeys(bytes []byte) (keys []ssh.PublicKey) {
 	var key ssh.PublicKey
 	var err error

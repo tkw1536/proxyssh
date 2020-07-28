@@ -12,7 +12,7 @@ import (
 
 // ServerOptions are options for the docker proxy server
 type ServerOptions struct {
-	// Client is the docker client
+	// Client is the docker client to use for everything
 	Client *client.Client
 	// ListenAddress is the address to listen on
 	ListenAddress string
@@ -24,17 +24,18 @@ type ServerOptions struct {
 	DockerLabelKey string
 	// ContainerShell is the executable to run within the container
 	ContainerShell string
-	// NoAuth disables authentication
-	NoAuth bool
+	// DisableAuthentication disables authentication
+	DisableAuthentication bool
 	// IdleTimeout is the timeout after which an idle connection is killed
 	IdleTimeout time.Duration
-	// ForwardPorts to allow forwarding for
-	ForwardPorts []utils.NetworkAddress
-	// ReversePorts to allow forwarding for
-	ReversePorts []utils.NetworkAddress
+	// ForwardAddresses are addresses that port forwarding is allowed for.
+	ForwardAddresses []utils.NetworkAddress
+	// ReverseAddresses are addresses that reverse port forwarding is allowed for.
+	ReverseAddresses []utils.NetworkAddress
 }
 
-// NewDockerProxyServer makes a new docker proxy server
+// NewDockerProxyServer makes a new docker ssh server with the given logger and options.
+// It returns a new server that was created.
 func NewDockerProxyServer(logger utils.Logger, opts ServerOptions) (server *ssh.Server) {
 	server = &ssh.Server{
 		Handler: proxyssh.HandleShellCommand(logger, func(s ssh.Session) (command []string, err error) {
@@ -75,12 +76,12 @@ func NewDockerProxyServer(logger utils.Logger, opts ServerOptions) (server *ssh.
 	}
 
 	// turn of auth when the flag is set
-	if opts.NoAuth {
+	if opts.DisableAuthentication {
 		logger.Print("WARNING: Disabling authentication. Anyone will be able to connect. ")
 		server.PublicKeyHandler = nil
 	}
 
-	server = proxyssh.AllowPortForwarding(logger, server, opts.ForwardPorts, opts.ReversePorts)
+	server = proxyssh.AllowPortForwarding(logger, server, opts.ForwardAddresses, opts.ReverseAddresses)
 
 	return
 }

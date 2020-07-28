@@ -30,7 +30,7 @@ func ParseNetworkAddress(s string) (p NetworkAddress, err error) {
 	port, err := strconv.ParseUint(pp, 10, 32)
 	if err != nil {
 		err = errors.Errorf("Unable to parse port")
-		return p, err
+		return
 	}
 	p.Port = uint32(port)
 
