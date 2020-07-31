@@ -59,7 +59,7 @@ var (
 	// DisableAuthentication disables authentication
 	DisableAuthentication = false
 	// IdleTimeout is the timeout after which an idle connection is killed
-	IdleTimeout = 30
+	IdleTimeout = 60 * 60
 	// ForwardAddresses are ports that are allowed to be forwarded
 	ForwardAddresses = utils.NetworkAddressListVar(nil)
 	// ReverseAddresses are ports that are allowed to be forwarded (in reverse)
