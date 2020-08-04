@@ -80,7 +80,7 @@ type DockerSSHAuthOptions struct {
 
 	// If set, check if a candidate container contains an authorized_keys file at the provided path(s)
 	// Paths may be an array seperated by commas.
-	LabelKeypath string
+	LabelFile string
 }
 
 // FindContainerKeys finds the public keys desired by a particular container and returns them
@@ -100,7 +100,7 @@ func FindContainerKeys(cli *client.Client, container types.Container, options Do
 	// Check the filepath label and if it exists and is non-empty
 	// we can proceed to try and get each file
 
-	filePath, hasFilePath := container.Labels[options.LabelKeypath]
+	filePath, hasFilePath := container.Labels[options.LabelFile]
 	if !hasFilePath || filePath == "" {
 		return
 	}

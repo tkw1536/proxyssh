@@ -67,7 +67,7 @@ func NewDockerProxyServer(logger utils.Logger, opts ServerOptions) (server *ssh.
 			}
 
 			keys := FindContainerKeys(opts.Client, container, DockerSSHAuthOptions{
-				LabelKeypath: opts.DockerLabelAuthFile,
+				LabelFile: opts.DockerLabelAuthFile,
 			})
 			return keys, nil
 		}),

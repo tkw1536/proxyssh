@@ -1,8 +1,10 @@
 package testutils
 
 import (
+	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
+	"encoding/base64"
 
 	"golang.org/x/crypto/ssh"
 )
@@ -27,4 +29,18 @@ func GenerateRSATestKeyPair() (ssh.Signer, ssh.PublicKey) {
 	}
 
 	return signer, signer.PublicKey()
+}
+
+// AuthorizedKeysString turns an (assumed rsa-key) into a string that can be written to an authorized_keys file.
+// If something goes wrong, calls panic()
+func AuthorizedKeysString(key ssh.PublicKey) string {
+	buffer := &bytes.Buffer{}
+	encoder := base64.NewEncoder(base64.StdEncoding, buffer)
+	if _, err := encoder.Write(key.Marshal()); err != nil {
+		panic(err)
+	}
+	if err := encoder.Close(); err != nil {
+		panic(err)
+	}
+	return "ssh-rsa " + buffer.String()
 }
