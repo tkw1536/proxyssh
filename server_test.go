@@ -30,15 +30,16 @@ func TestMain(m *testing.M) {
 			Shell:            "/bin/bash",
 			ForwardAddresses: []utils.NetworkAddress{forwardPortsAllow},
 			ReverseAddresses: []utils.NetworkAddress{reversePortsAllow},
-			ListenAddress:    testutils.NewTestListenAddress(),
 		},
 	)
 	// start listening and then serving
-	testListener, err := net.Listen("tcp", testServer.Addr)
+	addr := testutils.NewTestListenAddress()
+	testListener, err := net.Listen("tcp", addr)
 	if err != nil {
 		panic(err)
 	}
 	go testServer.Serve(testListener)
+	testServer.Addr = addr
 
 	// run the code
 	code := m.Run()
