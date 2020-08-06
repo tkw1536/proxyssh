@@ -1,6 +1,3 @@
-// Package utils contains utility functions that are used by dockerproxy and proxyssh.
-// These methods are intended to be used by github.com/tkw1536/proxyssh/dockerproxy and github.com/tkw1536/proxyssh only
-// and may change without notice.
 package utils
 
 import (

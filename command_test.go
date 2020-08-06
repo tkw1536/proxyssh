@@ -109,7 +109,7 @@ func TestCommandIsKilled(t *testing.T) {
 		time.Sleep(waitKillTimeout)
 
 		// check if the process ist still alive
-		if testutils.TestProcessAlive(process) {
+		if testutils.IsProcessAlive(process) {
 			t.Errorf("TestCommandKilled(): Process still alive")
 		}
 	})
@@ -135,7 +135,7 @@ func TestCommandIsKilled(t *testing.T) {
 		time.Sleep(waitKillTimeout)
 
 		// check if the process ist still alive
-		if testutils.TestProcessAlive(process) {
+		if testutils.IsProcessAlive(process) {
 			t.Errorf("TestCommandKilled(): Process still alive")
 		}
 	})

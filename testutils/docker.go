@@ -38,7 +38,9 @@ import (
 //
 // This function has two kinds of error conditions, those that occur during setting up the project, and those that occur in the testcode.
 // If an error occurs during setup or teardown, panic() is called.
-// If an error occurs during the testcase, and testcase does not call panic(), the error is returned by this function
+// If an error occurs during the testcase, and testcase does not call panic(), the error is returned by this function.
+//
+// This function is itself untested.
 func RunComposeTest(config string, files map[string]string, testcode func(cli *client.Client, findService func(string) types.Container, stopService func(string)) error) error {
 	// create a new docker client or panic
 	cli, err := client.NewEnvClient()

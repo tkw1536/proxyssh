@@ -74,7 +74,7 @@ func TestReadOrMakeHostKey(t *testing.T) {
 			defer cleanup()
 
 			// test actual: try to load the key
-			signer, err := ReadOrMakeHostKey(testutils.TestLogger(), tmpFile, tt.algorithm)
+			signer, err := ReadOrMakeHostKey(testutils.GetTestLogger(), tmpFile, tt.algorithm)
 			if err != nil {
 				t.Errorf("ReadOrMakeHostKey() error = %v, wantError = nil", err)
 			}
@@ -94,7 +94,7 @@ func TestReadOrMakeHostKey(t *testing.T) {
 			cleanup()
 
 			// test actual: ReadOrMakeHostKey should make a new file
-			signer, err := ReadOrMakeHostKey(testutils.TestLogger(), tmpFile, tt.algorithm)
+			signer, err := ReadOrMakeHostKey(testutils.GetTestLogger(), tmpFile, tt.algorithm)
 			if err != nil {
 				t.Errorf("ReadOrMakeHostKey() error = %v, wantError = nil", err)
 			}
@@ -113,7 +113,7 @@ func TestReadOrMakeHostKey(t *testing.T) {
 			defer cleanup()
 
 			// test actual: ReadOrMakeHostKey should error
-			signer, err := ReadOrMakeHostKey(testutils.TestLogger(), tmpFile, tt.algorithm)
+			signer, err := ReadOrMakeHostKey(testutils.GetTestLogger(), tmpFile, tt.algorithm)
 			if err == nil {
 				t.Errorf("ReadOrMakeHostKey() error = %v, wantError != nil", err)
 			}
@@ -143,7 +143,7 @@ func TestUseOrMakeHostKey(t *testing.T) {
 			tmpFile, cleanup := testutils.WriteTempFile("privkey.pem", tt.privateKey)
 			defer cleanup()
 
-			_, err := UseOrMakeHostKey(testutils.TestLogger(), testServer, tmpFile, tt.algorithm)
+			_, err := UseOrMakeHostKey(testutils.GetTestLogger(), testServer, tmpFile, tt.algorithm)
 			if err != nil {
 				t.Errorf("UseOrMakeHostKey() error = %v, wantError = nil", err)
 				t.FailNow()

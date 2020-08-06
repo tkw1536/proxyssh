@@ -24,6 +24,7 @@ import (
 //  }
 //  defer client.Close()
 //
+// This function is itself untested.
 func NewTestServerSession(address string, options ssh.ClientConfig) (*ssh.Client, *ssh.Session, error) {
 	// set default options
 	if options.HostKeyCallback == nil {
@@ -58,6 +59,8 @@ func NewTestServerSession(address string, options ssh.ClientConfig) (*ssh.Client
 //
 // The output of the command (consisting of stdout and stderr), along with it's exit code will be returned.
 // If something goes wrong running the command, an error will be returned.
+//
+// This function is itself untested.
 func RunTestServerCommand(address string, options ssh.ClientConfig, command, stdin string) (stdout string, stderr string, code int, err error) {
 	// create a new session
 	client, session, err := NewTestServerSession(address, options)

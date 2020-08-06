@@ -8,13 +8,14 @@ import (
 // NewTestListenAddress returns a new unused address that can be used
 // to start a listener on.
 //
-// The address is guaranteed to not be used by any other server, and listens only on the loopback interface.
+// The address is guaranteed to be on a port higher than 1024.
+// Furthermore, it is guaranteed not be used by any other server, and listens only on the loopback interface.
 // It will typically be something like "127.0.0.1:12345", but is not guaranteed to be of this form.
 //
 // If no address is available, or something unexpected happens, panic() is called.
 func NewTestListenAddress() string {
 	// fetch a new unused address from the kernel
-	addr, err := net.ResolveTCPAddr("tcp", "localhost:0")
+	addr, err := net.ResolveTCPAddr("tcp", "127.0.0.1:0")
 	if err != nil {
 		panic(err)
 	}
@@ -37,7 +38,7 @@ func NewTestListenAddress() string {
 // This function performs blocking work on the goroutine it was called on.
 // As such, it should typically be called like:
 //
-//  listener, err := net.Dial("tcp", address)
+//  listener, err := net.Listen("tcp", address)
 //  go TCPConstantTestResponse(listener, response)
 //  defer listener.Close()
 func TCPConstantTestResponse(listener net.Listener, response string) {

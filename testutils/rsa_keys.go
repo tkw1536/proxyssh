@@ -31,7 +31,7 @@ func GenerateRSATestKeyPair() (ssh.Signer, ssh.PublicKey) {
 	return signer, signer.PublicKey()
 }
 
-// AuthorizedKeysString turns an (assumed rsa-key) into a string that can be written to an authorized_keys file.
+// AuthorizedKeysString turns a public key into a string that can be written to an authorized_keys file.
 // If something goes wrong, calls panic()
 func AuthorizedKeysString(key ssh.PublicKey) string {
 	buffer := &bytes.Buffer{}
@@ -42,5 +42,5 @@ func AuthorizedKeysString(key ssh.PublicKey) string {
 	if err := encoder.Close(); err != nil {
 		panic(err)
 	}
-	return "ssh-rsa " + buffer.String()
+	return key.Type() + " " + buffer.String()
 }
