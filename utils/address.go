@@ -9,24 +9,24 @@ import (
 	"github.com/pkg/errors"
 )
 
-// NetworkAddress represents a network address consisting of a hostname and a port.
+// NetworkAddress is a network address consisting of a hostname and a port
 type NetworkAddress struct {
 	Hostname string
 	Port     uint32
 }
 
-// ParseNetworkAddress parses a network address of the form 'host:port'.
+// ParseNetworkAddress parses a network address of the form 'Hostname:Port'.
 // See func "net".Dial, in particular the hostport for allowed combinations.
 func ParseNetworkAddress(s string) (p NetworkAddress, err error) {
 	var pp string
 
-	// host
+	// split into hostname and port
 	p.Hostname, pp, err = net.SplitHostPort(s)
 	if err != nil {
 		return
 	}
 
-	// port
+	// parse the port into an int
 	port, err := strconv.ParseUint(pp, 10, 32)
 	if err != nil {
 		err = errors.Errorf("Unable to parse port")
