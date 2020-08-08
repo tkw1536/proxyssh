@@ -25,7 +25,7 @@ func main() {
 		DockerLabelKey:        "",
 		ContainerShell:        ContainerShell,
 		DisableAuthentication: DisableAuthentication,
-		IdleTimeout:           time.Duration(IdleTimeout) * time.Second,
+		IdleTimeout:           IdleTimeout,
 		ForwardAddresses:      ForwardAddresses,
 		ReverseAddresses:      ReverseAddresses,
 	})
@@ -59,7 +59,7 @@ var (
 	// DisableAuthentication disables authentication
 	DisableAuthentication = false
 	// IdleTimeout is the timeout after which an idle connection is killed
-	IdleTimeout = 60 * 60
+	IdleTimeout = 1 * time.Hour
 	// ForwardAddresses are ports that are allowed to be forwarded
 	ForwardAddresses = utils.NetworkAddressListVar(nil)
 	// ReverseAddresses are ports that are allowed to be forwarded (in reverse)
@@ -71,7 +71,7 @@ var (
 
 func init() {
 	flag.StringVar(&ListenAddress, "port", ListenAddress, "Port to listen on")
-	flag.IntVar(&IdleTimeout, "timeout", IdleTimeout, "Idle Timeout in seconds")
+	flag.DurationVar(&IdleTimeout, "timeout", IdleTimeout, "Idle Timeout")
 
 	flag.StringVar(&DockerLabelUser, "userlabel", DockerLabelUser, "Label to find docker containers by")
 	flag.StringVar(&DockerLabelAuthFile, "keylabel", DockerLabelAuthFile, "Label to find docker containers by")

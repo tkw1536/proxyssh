@@ -16,7 +16,7 @@ func main() {
 	// start the server
 	server := proxyssh.NewProxySSHServer(logger, proxyssh.ServerOptions{
 		ListenAddress:    ListenAddress,
-		IdleTimeout:      time.Duration(IdleTimeout) * time.Second,
+		IdleTimeout:      IdleTimeout,
 		Shell:            Shell,
 		ForwardAddresses: ForwardPorts,
 		ReverseAddresses: ReversePorts,
@@ -43,7 +43,7 @@ var (
 	// ListenAddress is the address to listen on
 	ListenAddress = ":2222"
 	// IdleTimeout is the timeout after which an idle connection is killed
-	IdleTimeout = 30
+	IdleTimeout = time.Hour
 	// Shell is the shell to use
 	Shell = "/bin/bash"
 	// ForwardPorts are ports that are allowed to be forwarded
@@ -56,7 +56,7 @@ var (
 
 func init() {
 	flag.StringVar(&ListenAddress, "port", ListenAddress, "Port to listen on")
-	flag.IntVar(&IdleTimeout, "timeout", IdleTimeout, "Idle Timeout in seconds")
+	flag.DurationVar(&IdleTimeout, "timeout", IdleTimeout, "Timeout to kill inactive connections after")
 	flag.StringVar(&Shell, "shell", Shell, "Shell to use")
 
 	flag.Var(&ForwardPorts, "L", "Ports to allow local forwarding for")
