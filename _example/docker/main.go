@@ -17,7 +17,7 @@ var logger = log.New(os.Stderr, "", log.LstdFlags)
 
 func main() {
 	// make the server
-	server := dockerproxy.NewDockerProxyServer(logger, dockerproxy.ServerOptions{
+	server := dockerproxy.NewProxy(logger, dockerproxy.Options{
 		Client:                cli,
 		ListenAddress:         ListenAddress,
 		DockerLabelUser:       DockerLabelUser,
