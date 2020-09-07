@@ -8,10 +8,10 @@ Also includes Docker support.
 ## Use Cases
 
 The main use case of this package is to provide a simple interface to build an ssh server that runs commands on the host it is running on. 
-See the `_example/simple` package. 
+See the `cmd/simplesshd` package. 
 
 A secondary use case is to provide an ssh server that runs commands in matching docker containers. 
-See the `_example/docker` package. 
+See the `cmd/dockersshd` package. 
 
 For a more detailed overall documentation, see the [godoc](https://pkg.go.dev/github.com/tkw1536/proxyssh). 
 

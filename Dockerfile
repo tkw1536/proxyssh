@@ -1,8 +1,8 @@
 FROM golang:alpine as builder
 
 ADD . /app/src/github.com/tkw1536/proxyssh
-WORKDIR /app/src/github.com/tkw1536/proxyssh/_example/docker
-RUN go build -o /main main.go
+WORKDIR /app/src/github.com/tkw1536/proxyssh
+RUN go build -o /dockersshd ./cmd/dockersshd
 
 # Download docker into /dockerclient
 ARG DOCKER_VERSION="19.03.12"
@@ -13,5 +13,5 @@ RUN apk --update add curl \
 FROM alpine
 EXPOSE 2222
 COPY --from=builder /dockerclient/docker/docker /usr/local/bin/docker
-COPY --from=builder /main /main
-ENTRYPOINT [ "/main" ]
+COPY --from=builder /dockersshd /dockersshd
+ENTRYPOINT [ "/dockersshd" ]
