@@ -1,3 +1,4 @@
+// Command simplesshd provides a simple ssh server that executes commands on the local machine.
 package main
 
 import (
@@ -14,7 +15,7 @@ var logger = log.New(os.Stderr, "", log.LstdFlags)
 
 func main() {
 	// start the server
-	server := proxyssh.NewProxySSHServer(logger, proxyssh.ServerOptions{
+	server := proxyssh.NewProxySSHServer(logger, proxyssh.Options{
 		ListenAddress:    ListenAddress,
 		IdleTimeout:      IdleTimeout,
 		Shell:            Shell,
@@ -23,13 +24,13 @@ func main() {
 	})
 
 	// load rsa host key
-	_, err := proxyssh.UseOrMakeHostKey(logger, server, HostKeyPath+"_rsa", proxyssh.RSAAlgorithm)
+	err := proxyssh.UseOrMakeHostKey(logger, server, HostKeyPath+"_rsa", proxyssh.RSAAlgorithm)
 	if err != nil {
 		logger.Fatal(err)
 	}
 
 	// load ed25519 host key
-	_, err = proxyssh.UseOrMakeHostKey(logger, server, HostKeyPath+"_ed25519", proxyssh.ED25519Algorithm)
+	err = proxyssh.UseOrMakeHostKey(logger, server, HostKeyPath+"_ed25519", proxyssh.ED25519Algorithm)
 	if err != nil {
 		logger.Fatal(err)
 	}

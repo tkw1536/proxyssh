@@ -12,11 +12,17 @@ import (
 // NetworkAddress is a network address consisting of a hostname and a port
 type NetworkAddress struct {
 	Hostname string
-	Port     uint32
+	Port     Port
 }
 
+// Port represents the Port of a NetworkAddress
+type Port uint16
+
 // ParseNetworkAddress parses a network address of the form 'Hostname:Port'.
-// See func "net".Dial, in particular the hostport for allowed combinations.
+// See function net.Dial, in particular the hostport for allowed combinations.
+//
+// When parsing fails a non-nil error is returned.
+// Otherwise, error is nil.
 func ParseNetworkAddress(s string) (p NetworkAddress, err error) {
 	var pp string
 
@@ -29,16 +35,17 @@ func ParseNetworkAddress(s string) (p NetworkAddress, err error) {
 	// parse the port into an int
 	port, err := strconv.ParseUint(pp, 10, 32)
 	if err != nil {
-		err = errors.Errorf("Unable to parse port")
+		err = errors.Wrapf(err, "Unable to parse port: %s", err)
 		return
 	}
-	p.Port = uint32(port)
+	p.Port = Port(port)
 
 	return p, nil
 }
 
 // MustParseNetworkAddress is like ParseNetworkAddress except that it calls panic() instead of returning an error.
-// This func is intended for test cases.
+//
+// This function is intended to be used for test cases.
 func MustParseNetworkAddress(s string) NetworkAddress {
 	p, err := ParseNetworkAddress(s)
 	if err != nil {

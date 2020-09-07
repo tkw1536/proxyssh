@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"sync"
 	"syscall"
 	"unsafe"
 
@@ -16,26 +15,31 @@ import (
 	"github.com/tkw1536/proxyssh/utils"
 )
 
-// HandleShellCommand creates an ssh.Handler that runs a shell command for every ssh.Session that connects
+// HandleShellCommand creates an ssh.Handler that runs a shell command for every ssh.Session that connects.
 //
-// shellCommand is a function that is called for every session and should return the shell command to run along with all arguments.
-// When err is not nil, the first value of the command is passed to exec.LookPath.
+// shellCommand is a function.
+// It is called for every ssh session and should return the shell command along with any arguments to execute for the provided session.
+// The returned array must be at least of length 1.
+// The first argument will be passed to exec.LookPath.
+// When shell command returns a non-nil error, no command will be executed and the session will be aborted.
 //
-// logger is called for every significant event for every connection.
+// logger is called for every significant event that occurs.
+//
+// See also the CommandSession struct and NewCommandSession func.
 func HandleShellCommand(logger utils.Logger, shellCommand func(session ssh.Session) (command []string, err error)) ssh.Handler {
 	return func(session ssh.Session) {
 		// logging
 		utils.FmtSSHLog(logger, session, "session_start %s", session.User())
 		defer utils.FmtSSHLog(logger, session, "session_end")
 
-		// find the command to run
 		command, err := shellCommand(session)
 		if err != nil {
 			abortsession(logger, session, errors.Wrap(err, "Failed to find command"))
 			return
 		}
 
-		sshcmd, err := newSSHCommand(logger, session, command)
+		// TODO: Have (command, args) returned
+		sshcmd, err := NewCommandSession(logger, session, command[0], command[1:])
 		if err != nil {
 			abortsession(logger, session, errors.Wrap(err, "Failed to create ssh command"))
 			return
@@ -46,7 +50,8 @@ func HandleShellCommand(logger utils.Logger, shellCommand func(session ssh.Sessi
 	}
 }
 
-// abortsession aborts a session with a given error message
+// abortsession exits an SSH session with code 255.
+// It also prints the error message to the user on STDERR.
 func abortsession(logger utils.Logger, s ssh.Session, err error) {
 	errmsg := err.Error()
 	utils.FmtSSHLog(logger, s, "session_command %s", errmsg)
@@ -54,53 +59,60 @@ func abortsession(logger utils.Logger, s ssh.Session, err error) {
 	s.Exit(255)
 }
 
-// sshCommand represents an ssh session that proxies an ssh pty
-type sshCommand struct {
+// CommandSession represents an ongoing ssh.Session executing a shell command.
+type CommandSession struct {
 	ssh.Session // the underlying ssh.session
 
-	// the underlying logger
 	Logger utils.Logger
 
-	// the command and pty it's running on
+	// the command and pty that the session runs on
 	cmd    *exec.Cmd
 	cmdPty *os.File
 
-	// finish everything once
-	finish sync.Once
+	// for finalization
+	started  utils.OneTime
+	finished utils.OneTime
 }
 
-// newSSHCommand returns a new ssh command
-// s is the underlying ssh session, command is the command to be run
-func newSSHCommand(logger utils.Logger, session ssh.Session, command []string) (c *sshCommand, err error) {
+// NewCommandSession creates a new command session to execute a shell command.
+// It prepares all resources, but does not actually start the session.
+//
+// The command and arguments describe the process to be running in this session.
+// command will be passed to exec.LookPath.
+func NewCommandSession(logger utils.Logger, session ssh.Session, command string, args []string) (*CommandSession, error) {
 
-	// Look for 'exe' in the path, bail out if you can't find it
+	// exec.Command internally does use LookPath(), but doesn't return an error
+	// Instead we explicitly call LookPath() to intercept the error
+
 	var exe string
-	exe, err = exec.LookPath(command[0])
+	exe, err := exec.LookPath(command)
 	if err != nil {
-		err = errors.Wrapf(err, "Can't find %s in path", command[0])
-		return
+		err = errors.Wrapf(err, "Can't find %s in path", command)
+		return nil, err
 	}
 
-	// make the command
-	cmd := exec.Command(exe, command[1:]...)
+	return &CommandSession{
+		cmd: exec.Command(exe, args...),
 
-	// create the command session
-	c = &sshCommand{
 		Session: session,
 		Logger:  logger,
-		cmd:     cmd,
-	}
-	return
+	}, nil
 }
 
-// Run runs and waits for this ssh session
-// when an error occurs, calls finalize()
-func (c *sshCommand) Run() error {
-	err := c.start()
+var errAlreadyStarted = errors.New("CommandSession.Run(): Already started. ")
 
-	// if we failed to start the command, we raise an error message
-	if err != nil {
-		err = errors.Wrap(err, "start() return error")
+// Run runs this session and waits for it to complete.
+// After a call to this function ssh.Session will have closed.
+//
+// If this session was already started, immediatly returns an error.
+// If something goes wrong when starting the session also returns an error.
+func (c *CommandSession) Run() error {
+	if !c.started.Lock() {
+		return errAlreadyStarted
+	}
+
+	if err := c.start(); err != nil {
+		err = errors.Wrap(err, "Failed to start session")
 		c.finalize(255, err)
 		return err
 	}
@@ -112,15 +124,14 @@ func (c *sshCommand) Run() error {
 		return
 	}()
 
-	// wait for the command, then exit the ssh session appropriatly
+	// else wait for the session to finish
 	code, err := c.wait()
 	c.finalize(code, err)
 	return err
 }
 
 // start starts this session
-// never calls finalize()
-func (c *sshCommand) start() (err error) {
+func (c *CommandSession) start() (err error) {
 
 	// start either a regular or pty session
 	if _, _, isPty := c.Pty(); !isPty {
@@ -131,8 +142,8 @@ func (c *sshCommand) start() (err error) {
 	return
 }
 
-// startRegular runs a non pty command
-func (c *sshCommand) startRegular() error {
+// startRegular starts running a command that did not request a pty
+func (c *CommandSession) startRegular() error {
 	// create a pipe for stdout
 	stdout, err := c.cmd.StdoutPipe()
 	if err != nil {
@@ -167,8 +178,8 @@ func (c *sshCommand) startRegular() error {
 	return c.cmd.Start()
 }
 
-// startPty runs everything when a pty is requested
-func (c *sshCommand) startPty() error {
+// startPty starts a session that requested a pty
+func (c *CommandSession) startPty() error {
 
 	// create a new command and setup the term environment variable
 	ptyReq, winCh, _ := c.Pty()
@@ -196,7 +207,8 @@ func (c *sshCommand) startPty() error {
 	return nil
 }
 
-func (c *sshCommand) wait() (code int, err error) {
+// wait waits for this session to finish
+func (c *CommandSession) wait() (code int, err error) {
 	// wait for the command
 	err = c.cmd.Wait()
 	code = 255
@@ -216,7 +228,7 @@ func (c *sshCommand) wait() (code int, err error) {
 }
 
 // setWinsize sets the window size of the pty
-func (c *sshCommand) setWinsize(w, h int) {
+func (c *CommandSession) setWinsize(w, h int) {
 	c.fmtLog("term_resize %d %d", w, h)
 	syscall.Syscall(syscall.SYS_IOCTL, c.cmdPty.Fd(), uintptr(syscall.TIOCSWINSZ),
 		uintptr(unsafe.Pointer(&struct{ h, w, x, y uint16 }{uint16(h), uint16(w), 0, 0})))
@@ -226,29 +238,31 @@ func (c *sshCommand) setWinsize(w, h int) {
 // This function can be safely called multiple times, in different goroutines.
 // If the session was already finalized, this function does nothing.
 // Finalizing a session means setting a status code and, if err is not nil, print it to the stderr of the session and the log.
-func (c *sshCommand) finalize(status int, err error) {
-	c.finish.Do(func() {
-		// write error message to console
-		if err != nil {
-			io.WriteString(c.Stderr(), err.Error()+"\n")
-		}
+func (c *CommandSession) finalize(status int, err error) {
+	if !c.finished.Lock() {
+		return
+	}
 
-		// mark that we are finalized, and return
-		if err == nil {
-			c.fmtLog("session_exit %d", status)
-		} else {
-			c.fmtLog("session_exit %d %s", status, err.Error())
-		}
-		c.Exit(status)
+	// write error message to console
+	if err != nil {
+		io.WriteString(c.Stderr(), err.Error()+"\n")
+	}
 
-		// kill the process in the background
-		go c.killProcess()
-	})
+	// mark that we are finalized, and return
+	if err == nil {
+		c.fmtLog("session_exit %d", status)
+	} else {
+		c.fmtLog("session_exit %d %s", status, err.Error())
+	}
+	c.Exit(status)
+
+	// kill the process in the background
+	go c.killProcess()
 }
 
 // killProcess tries to kill the process.
 // silences all errors
-func (c *sshCommand) killProcess() {
+func (c *CommandSession) killProcess() {
 	// no process => return
 	if c.cmd.Process == nil {
 		return
@@ -269,6 +283,6 @@ func (c *sshCommand) killProcess() {
 }
 
 // fmtLog is like FmtSSHLog, but for this session
-func (c *sshCommand) fmtLog(message string, args ...interface{}) {
+func (c *CommandSession) fmtLog(message string, args ...interface{}) {
 	utils.FmtSSHLog(c.Logger, c, message, args...)
 }

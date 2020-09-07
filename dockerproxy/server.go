@@ -142,7 +142,7 @@ func NewProxy(logger utils.Logger, opts Options) (server *ssh.Server) {
 	}
 
 	// setup forwarding
-	server = proxyssh.AllowPortForwarding(logger, server, opts.ForwardAddresses, opts.ReverseAddresses)
+	proxyssh.AllowPortForwarding(logger, server, opts.ForwardAddresses, opts.ReverseAddresses)
 
 	return
 }

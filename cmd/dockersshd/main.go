@@ -1,3 +1,4 @@
+// Command dockersshd provides am ssh server that executes commands inside docker.
 package main
 
 import (
@@ -31,13 +32,13 @@ func main() {
 	})
 
 	// load rsa host key
-	_, err := proxyssh.UseOrMakeHostKey(logger, server, HostKeyPath+"_rsa", proxyssh.RSAAlgorithm)
+	err := proxyssh.UseOrMakeHostKey(logger, server, HostKeyPath+"_rsa", proxyssh.RSAAlgorithm)
 	if err != nil {
 		logger.Fatal(err)
 	}
 
 	// load ed25519 host key
-	_, err = proxyssh.UseOrMakeHostKey(logger, server, HostKeyPath+"_ed25519", proxyssh.ED25519Algorithm)
+	err = proxyssh.UseOrMakeHostKey(logger, server, HostKeyPath+"_ed25519", proxyssh.ED25519Algorithm)
 	if err != nil {
 		logger.Fatal(err)
 	}

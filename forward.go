@@ -10,7 +10,7 @@ import (
 // logger is called whenever a request from a caller is allowed or denied.
 func AllowForwardTo(logger utils.Logger, addresses []utils.NetworkAddress) ssh.LocalPortForwardingCallback {
 	return func(ctx ssh.Context, dhost string, dport uint32) bool {
-		return filterInternal(logger, "", ctx, addresses, utils.NetworkAddress{Hostname: dhost, Port: dport})
+		return filterInternal(logger, "", ctx, addresses, utils.NetworkAddress{Hostname: dhost, Port: utils.Port(dport)})
 	}
 }
 
@@ -19,7 +19,7 @@ func AllowForwardTo(logger utils.Logger, addresses []utils.NetworkAddress) ssh.L
 // logger is called whenever a request from a caller is allowed or denied.
 func AllowForwardFrom(logger utils.Logger, addresses []utils.NetworkAddress) ssh.ReversePortForwardingCallback {
 	return func(ctx ssh.Context, bindHost string, bindPort uint32) bool {
-		return filterInternal(logger, "_reverse", ctx, addresses, utils.NetworkAddress{Hostname: bindHost, Port: bindPort})
+		return filterInternal(logger, "_reverse", ctx, addresses, utils.NetworkAddress{Hostname: bindHost, Port: utils.Port(bindPort)})
 	}
 }
 
@@ -38,23 +38,18 @@ func filterInternal(logger utils.Logger, logExtra string, ctx ssh.Context, addre
 // AllowPortForwarding enables port forwarding on the provided server only to and from the given addresses.
 // This function also calls EnablePortForwarding, please see appropriate documentation
 //
-// Both 'toAddresses' and 'fromAddresses', as well as logger, is passed to AllowForwardTo and AllowForwardFrom respectively.
-// See appropriate documentation there.
+// See also AllowForwardTo, AllowForwardFrom and EnablePortForwarding.
 //
-// The server returned from this function is returned for convenience only.
-// It is the same server that was originally passed.
-func AllowPortForwarding(logger utils.Logger, server *ssh.Server, toAddresses []utils.NetworkAddress, fromAddresses []utils.NetworkAddress) *ssh.Server {
-	return EnablePortForwarding(server, AllowForwardTo(logger, toAddresses), AllowForwardFrom(logger, fromAddresses))
+func AllowPortForwarding(logger utils.Logger, server *ssh.Server, toAddresses []utils.NetworkAddress, fromAddresses []utils.NetworkAddress) {
+	EnablePortForwarding(server, AllowForwardTo(logger, toAddresses), AllowForwardFrom(logger, fromAddresses))
 }
 
 // EnablePortForwarding enables portforwarding with the given callbacks on the ssh Server server.
+// This includes tcpip forward requests as well as direct-tcpip channels.
 //
-// This will overwrite any already configured LocalPortForwardingCallback and ReversePortForwardingCallback functions.
+// This function overwrites any already configured LocalPortForwardingCallback and ReversePortForwardingCallback functions.
 // It will furthermore remove the 'tcpip-forward' and 'cancel-tcpip-forward' request handlers along with the 'direct-tcpip' channel handler.
-//
-// The server returned from this function is returned for convenience only.
-// It is the same server that was originally passed.
-func EnablePortForwarding(server *ssh.Server, localCallback ssh.LocalPortForwardingCallback, reverseCallback ssh.ReversePortForwardingCallback) *ssh.Server {
+func EnablePortForwarding(server *ssh.Server, localCallback ssh.LocalPortForwardingCallback, reverseCallback ssh.ReversePortForwardingCallback) {
 	forwardHandler := &ssh.ForwardedTCPHandler{}
 
 	// store the fowarding callbacks
@@ -82,6 +77,4 @@ func EnablePortForwarding(server *ssh.Server, localCallback ssh.LocalPortForward
 
 	// allow direct-tcip handlers also
 	server.ChannelHandlers["direct-tcpip"] = ssh.DirectTCPIPHandler
-
-	return server
 }
