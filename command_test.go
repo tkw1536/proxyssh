@@ -97,12 +97,7 @@ func TestCommandIsKilled(t *testing.T) {
 			t.FailNow()
 		}
 
-		// process
-		process, err := testutils.GetTestSessionProcess(session)
-		if err != nil {
-			t.Errorf("Unable to get test session pid: %s", err)
-			t.FailNow()
-		}
+		process := testutils.GetTestSessionProcess(session)
 
 		// close the client
 		client.Close()
@@ -124,11 +119,7 @@ func TestCommandIsKilled(t *testing.T) {
 		}
 
 		// process
-		process, err := testutils.GetTestSessionProcess(session)
-		if err != nil {
-			t.Errorf("Unable to get test session pid: %s", err)
-			t.FailNow()
-		}
+		process := testutils.GetTestSessionProcess(session)
 
 		// close the session
 		session.Close()

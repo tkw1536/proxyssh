@@ -16,32 +16,48 @@ import (
 	"github.com/pkg/errors"
 )
 
-// RunComposeTest starts the docker-compose configuration contained in the string, writes out addtional data files in the provided map, and then waits for it to become available. Finally, it runs f.
-// Depends on the 'docker-compose' executable to be available in path.
+// ComposeTestCode is a function that runs tests inside a docker-compose file context.
+// It returns an error if the test cases failed, and nil otherwise.
+// See also RunComposeTest.
 //
-// Calling this function is roughly equivalent to:
+// This function receives three parameters from the testrunner.
 //
-// mktmp -d
-// echo $config > tmpdir/docker-compose.yml
-// docker-compose pull
-// docker-compose up -d tmpdir/docker-compose.yml
-// ... run tests ...
-// docker-compose down -v
-// rm -rf tmpdir
+// cli is a valid Docker Client that can be used for arbitary interactions with docker.
+//
+// findService is a function that is provided a name of a service, and returns the container within the current docker-compose context.
+//
+// stopService and is a function that can be used to stop a particular service in the docker-compose service.
+type ComposeTestCode func(cli *client.Client, findService func(string) types.Container, stopService func(string)) error
+
+// RunComposeTest runs a docker-compose based test.
+// It first starts the docker-compose configuration contained in the string.
+// Thenm it writes out addtional data files in the provided map and waits for it to become available.
+// Finally, it runs the testcode function.
+//
+//
+// Calling this function is roughly equivalent to the following bash pseudo-code:
+//
+//   mktmp -d
+//   echo $config > tmpdir/docker-compose.yml
+//   docker-compose pull
+//   docker-compose up -d tmpdir/docker-compose.yml
+//   // ... call f() ...
+//   docker-compose down -v
+//   rm -rf tmpdir
+//
 //
 // For source code compatibility purposes, all occurences of '\t' in the compose file will be replace with four spaces.
 //
-// The testCode function gets three additional parameters.
-// The first parameter is a valid docker cli client that can be used during testing.
-// The second is called findService and it returns the container belonging to a provided service in the compose-file.
-// The third is called 'stopService' and is a function that can be used to stop a particular service from the compose-file.
+// This command depends on the 'docker-compose' executable to be available in path.
 //
 // This function has two kinds of error conditions, those that occur during setting up the project, and those that occur in the testcode.
 // If an error occurs during setup or teardown, panic() is called.
 // If an error occurs during the testcase, and testcase does not call panic(), the error is returned by this function.
 //
 // This function is itself untested.
-func RunComposeTest(config string, files map[string]string, testcode func(cli *client.Client, findService func(string) types.Container, stopService func(string)) error) error {
+func RunComposeTest(config string, files map[string]string, testcode ComposeTestCode) error {
+	// TODO: Make a simple test for this function
+
 	// create a new docker client or panic
 	cli, err := client.NewEnvClient()
 	if err != nil {

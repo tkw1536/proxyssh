@@ -5,8 +5,8 @@ import (
 	"strconv"
 )
 
-// NewTestListenAddress returns a new unused address that can be used
-// to start a listener on.
+// NewTestListenAddress returns a new unused address that can be used to start a listener on.
+// The address returned will be off the form 'host:port' and compatible with net.Dial() and friends.
 //
 // The address is guaranteed to be on a port higher than 1024.
 // Furthermore, it is guaranteed not be used by any other server, and listens only on the loopback interface.
