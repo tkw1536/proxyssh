@@ -3,12 +3,14 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"time"
 
 	"github.com/tkw1536/proxyssh"
 	"github.com/tkw1536/proxyssh/dockerproxy"
+	"github.com/tkw1536/proxyssh/legal"
 	"github.com/tkw1536/proxyssh/utils"
 
 	"github.com/docker/docker/client"
@@ -71,6 +73,18 @@ var (
 )
 
 func init() {
+
+	var legalFlag bool
+	flag.BoolVar(&legalFlag, "legal", legalFlag, "Print legal notices and exit")
+	defer func() {
+		if legalFlag {
+			fmt.Println("This executable contains code from several different go packages. ")
+			fmt.Println("Some of these packages require licensing information to be made available to the end user. ")
+			fmt.Println(legal.Notices)
+			os.Exit(0)
+		}
+	}()
+
 	flag.StringVar(&ListenAddress, "port", ListenAddress, "Port to listen on")
 	flag.DurationVar(&IdleTimeout, "timeout", IdleTimeout, "Idle Timeout")
 
@@ -87,6 +101,7 @@ func init() {
 	flag.StringVar(&HostKeyPath, "hostkey", HostKeyPath, "Path to the host key")
 
 	flag.Parse()
+
 }
 
 var cli *client.Client
