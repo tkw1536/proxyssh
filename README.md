@@ -19,9 +19,13 @@ For a more detailed overall documentation, see the [godoc](https://pkg.go.dev/gi
 ## Dockerfiles
 
 This repository contains Dockerfiles for both of the examples, called `Dockerfile.simple` and `Dockerfile` respectively. 
-The Dockerfile for the docker scenario is available as the automated build [tkw01536/proxyssh](https://hub.docker.com/r/tkw01536/proxyssh). 
-It is intended to be run as follows:
+
+These are available as the GitHub Packages [dockersshd](https://github.com/tkw1536/proxyssh/packages/391072) and [simplesshd](https://github.com/tkw1536/proxyssh/packages/391070) respectively. 
+
+The `dockersshd` image can be run as follows:
 
 ```bash
-docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -p 2222:2222 tkw01536/proxyssh
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -p 2222:2222 docker.pkg.github.com/tkw1536/proxyssh/dockersshd:latest
 ```
+
+For legacy reasons, the `dockersshd` Image is also available as the automated build [tkw01536/proxyssh](https://hub.docker.com/r/tkw01536/proxyssh). 
