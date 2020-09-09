@@ -1,1 +1,3 @@
 hostkey.pem*
+/dockersshd
+/simplesshd
