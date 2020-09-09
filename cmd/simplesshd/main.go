@@ -13,7 +13,7 @@
 // By default, the shell used is /bin/bash, but this can be configured.
 // This shell command is executed as the user running the simplesshd command.
 // When arguments are provided via the ssh command, these are passed to the command.
-// When the client requests to allocate a pty, a pty is executed.
+// When the client requests to allocate a pty, a pty is created.
 // The daemon then proxies the input and output streams between the connection and the executed process.
 //
 // This daemon furthermore allows Port Forwarding and Reverse Port Forwarding.
@@ -80,45 +80,41 @@ import (
 var logger = log.New(os.Stderr, "", log.LstdFlags)
 
 func main() {
-	// start the server
+	// init
 	server := proxyssh.NewProxySSHServer(logger, proxyssh.Options{
-		ListenAddress:    ListenAddress,
-		IdleTimeout:      IdleTimeout,
-		Shell:            Shell,
-		ForwardAddresses: ForwardPorts,
-		ReverseAddresses: ReversePorts,
+		ListenAddress:    listenAddress,
+		IdleTimeout:      idleTimeout,
+		Shell:            shell,
+		ForwardAddresses: forwardPorts,
+		ReverseAddresses: reversePorts,
 	})
 
-	// load rsa host key
-	err := proxyssh.UseOrMakeHostKey(logger, server, HostKeyPath+"_rsa", proxyssh.RSAAlgorithm)
+	// load host keys
+	err := proxyssh.UseOrMakeHostKey(logger, server, hostKeyPath+"_rsa", proxyssh.RSAAlgorithm)
+	if err != nil {
+		logger.Fatal(err)
+	}
+	err = proxyssh.UseOrMakeHostKey(logger, server, hostKeyPath+"_ed25519", proxyssh.ED25519Algorithm)
 	if err != nil {
 		logger.Fatal(err)
 	}
 
-	// load ed25519 host key
-	err = proxyssh.UseOrMakeHostKey(logger, server, HostKeyPath+"_ed25519", proxyssh.ED25519Algorithm)
-	if err != nil {
-		logger.Fatal(err)
-	}
-
-	// serve the server
-	logger.Printf("Listening on %s", ListenAddress)
+	// and run
+	logger.Printf("Listening on %s", listenAddress)
 	logger.Fatal(server.ListenAndServe())
 }
 
 var (
-	// ListenAddress is the address to listen on
-	ListenAddress = ":2222"
-	// IdleTimeout is the timeout after which an idle connection is killed
-	IdleTimeout = time.Hour
-	// Shell is the shell to use
-	Shell = "/bin/bash"
-	// ForwardPorts are ports that are allowed to be forwarded
-	ForwardPorts = utils.NetworkAddressListVar(nil)
-	// ReversePorts are ports that are allowed to be forwarded (in reverse)
-	ReversePorts = utils.NetworkAddressListVar(nil)
-	// HostKeyPath is the base path to the host key
-	HostKeyPath = "hostkey.pem"
+	listenAddress = ":2222"
+
+	idleTimeout = time.Hour
+
+	shell = "/bin/bash"
+
+	forwardPorts = utils.NetworkAddressListVar(nil)
+	reversePorts = utils.NetworkAddressListVar(nil)
+
+	hostKeyPath = "hostkey.pem"
 )
 
 func init() {
@@ -133,14 +129,14 @@ func init() {
 		}
 	}()
 
-	flag.StringVar(&ListenAddress, "port", ListenAddress, "Port to listen on")
-	flag.DurationVar(&IdleTimeout, "timeout", IdleTimeout, "Timeout to kill inactive connections after")
-	flag.StringVar(&Shell, "shell", Shell, "Shell to use")
+	flag.StringVar(&listenAddress, "port", listenAddress, "Port to listen on")
+	flag.DurationVar(&idleTimeout, "timeout", idleTimeout, "Timeout to kill inactive connections after")
+	flag.StringVar(&shell, "shell", shell, "Shell to use")
 
-	flag.Var(&ForwardPorts, "L", "Ports to allow local forwarding for")
-	flag.Var(&ReversePorts, "R", "Ports to allow reverse forwarding for")
+	flag.Var(&forwardPorts, "L", "Ports to allow local forwarding for")
+	flag.Var(&reversePorts, "R", "Ports to allow reverse forwarding for")
 
-	flag.StringVar(&HostKeyPath, "hostkey", HostKeyPath, "Path to the host key")
+	flag.StringVar(&hostKeyPath, "hostkey", hostKeyPath, "Path to the host key")
 
 	flag.Parse()
 }
