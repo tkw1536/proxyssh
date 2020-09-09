@@ -33,7 +33,7 @@
 // This argument allows to use a different shell instead.
 // The shell is looked up in $PATH.
 //
-// When a ssh session is started without a provided command, proxyssh starts the shell without any arguments.
+// When an ssh session is started without a provided command, proxyssh starts the shell without any arguments.
 // When the user provides a command to run, it is passed to the shell using a '-c' argument.
 // For example, suppose the shell is /bin/bash and the user requests the command 'ls -alh'.
 // Then this program will execute the command:
@@ -49,7 +49,7 @@
 //
 //  -hostkey prefix
 //
-// Te daemon supports to kinds of ssh host keys, an RSA and an ED25519 key.
+// Te daemon supports two kinds of ssh host keys, an RSA and an ED25519 key.
 // By default these are stored in two files called 'hostkey.pem_rsa' and 'hostkey.pem_ed25519' in the working directory of the simplesshd process.
 // If either of these files do not exist, they are generated when the program runs for the first time.
 //

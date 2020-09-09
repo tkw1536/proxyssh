@@ -1,16 +1,17 @@
-// Command dockersshd provides am ssh server that executes commands inside docker.
+// Command dockersshd provides an ssh server that executes commands inside docker.
 // It accepts connections on port 2222 from any interface by default.
 //
 //
 // Overview
 //
 // When a connection is received the daemon will first attempt to find a matching docker container.
-// By default is determined by finding Docker containers with the label 'de.tkw1536.proxyssh.user' equal to the username of the ssh connection.
+// This happens by finding docker containers where the label 'de.tkw1536.proxyssh.user' is equal to the username of the ssh connection.
 // If no unique matching container is found, the connection is rejected immediatly.
+// The label used can be customized, see Configuration below.
 //
-// Next, the server investigates the container further and attempts to find an OpenSSH-like authorized_key file inside the container.
-// The location of this file should by default be stored in the 'de.tkw1536.proxyssh.authfile' label of the container; however this can be customized.
-// If an ssh key matches any of the public keys in the authorized_key files, the connection is accepted.
+// Next, the server investigates the container further and attempts to find an OpenSSH-like authorized_keys file.
+// The location of this file is dervived from the 'de.tkw1536.proxyssh.authfile' label.
+// If the ssh key of the client connection matches any of the public keys in the authorized_key files, the connection is accepted.
 // Otherwise it is rejected.
 //
 // Afterwards, a new shell process is executed inside the Docker Container.
@@ -24,6 +25,7 @@
 // These are evaluated relative to the 'dockersshd' host, not the docker container in question.
 //
 // dockersshd internally relies on the 'docker' command being available on the host system.
+// If this is not available, connections might fail unexpectedly.
 //
 // Configuration
 //
@@ -42,8 +44,8 @@
 //
 //  -keylabel label
 //
-// To authenticate a user by default the 'de.tkw1536.proxyssh.authfile' label of docker containers is used.
-// This value of this label should contain comma-seperated file paths to authorized_keys files within the docker container that should be used.
+// By default to authenticate a user the 'de.tkw1536.proxyssh.authfile' label of docker containers is used.
+// The value of this label should contain comma-seperated file paths to authorized_keys files within the docker container.
 // If a file does not exist or is invalid, it is silently ignored.
 // Connections are accepted if any of the public key signatures match the incoming ssh key.
 // This argument can be used to use a different label instead.
@@ -51,8 +53,7 @@
 //  -unsafe
 //
 // This flag can be used to turn off authentication completly.
-// Any ssh connection will be accepted.
-// It should not be used in production.
+// It should not be used in production, and is for debugging purposes only.
 //
 //  -shell executable
 //
@@ -60,7 +61,7 @@
 // This argument allows to use a different shell instead.
 // The shell is not looked up in $PATH.
 //
-// When a ssh session is started without a provided command, dockersshd starts the shell without any arguments.
+// When an ssh session is started without a provided command, dockersshd starts the shell without any arguments.
 // When the user provides a command to run, it is passed to the shell using a '-c' argument.
 // For example, suppose the shell is /bin/sh and the user requests the command 'ls -alh'.
 // Then this program will execute the command:
@@ -76,7 +77,7 @@
 //
 //  -hostkey prefix
 //
-// Te daemon supports to kinds of ssh host keys, an RSA and an ED25519 key.
+// The daemon supports two kinds of ssh host keys, an RSA and an ED25519 key.
 // By default these are stored in two files called 'hostkey.pem_rsa' and 'hostkey.pem_ed25519' in the working directory of the proxysshd process.
 // If either of these files do not exist, they are generated when the program runs for the first time.
 //
