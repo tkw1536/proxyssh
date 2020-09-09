@@ -1,0 +1,35 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+      - name: Check that 'gofmt' has been run
+        run: test -z $(gofmt -l .)
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+      - name: Run 'go test'
+        run: go test -v ./...
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+      - name: Build executables
+        run: |
+            go build ./cmd/dockersshd
+            go build ./cmd/simplesshd
+      - name: Upload executables
+        uses: actions/upload-artifact@v2
+        with:
+          name: Binaries
+          path: |
+            ./dockersshd
+            ./simplesshd
