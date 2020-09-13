@@ -20,8 +20,14 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-        - uses: actions/checkout@v2
-        - uses: actions/setup-go@v2
+      - uses: actions/setup-go@v2
+      - name: Install gogenlicense
+        run: go get github.com/tkw1536/gogenlicense/cmd/gogenlicense
+      - uses: actions/checkout@v2
+      - name: Update licenses
+        run: |
+          export PATH=$PATH:$(go env GOPATH)/bin
+          go generate ./...
         - name: Build executables
           run: |
             go build ./cmd/dockersshd
