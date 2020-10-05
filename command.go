@@ -3,14 +3,11 @@ package proxyssh
 import (
 	"fmt"
 	"io"
-	"os"
 	"os/exec"
 	"strings"
-	"syscall"
-	"unsafe"
 
+	"github.com/creack/pty"
 	"github.com/gliderlabs/ssh"
-	"github.com/kr/pty"
 	"github.com/pkg/errors"
 	"github.com/tkw1536/proxyssh/utils"
 )
@@ -65,9 +62,8 @@ type CommandSession struct {
 
 	Logger utils.Logger
 
-	// the command and pty that the session runs on
-	cmd    *exec.Cmd
-	cmdPty *os.File
+	// the command that the session runs on
+	cmd *exec.Cmd
 
 	// for finalization
 	started  utils.OneTime
@@ -180,6 +176,7 @@ func (c *CommandSession) startRegular() error {
 
 // startPty starts a session that requested a pty
 func (c *CommandSession) startPty() error {
+	c.fmtLog("in startpty")
 
 	// create a new command and setup the term environment variable
 	ptyReq, winCh, _ := c.Pty()
@@ -196,13 +193,16 @@ func (c *CommandSession) startPty() error {
 	// listen for window size changes
 	go func() {
 		for win := range winCh {
-			c.setWinsize(win.Width, win.Height)
+			c.fmtLog("term_resize %d %d", win.Height, win.Width)
+			pty.Setsize(f, &pty.Winsize{
+				Rows: uint16(win.Height),
+				Cols: uint16(win.Width),
+			})
 		}
 	}()
-	go func() {
-		io.Copy(f, c) // input
-	}()
-	io.Copy(c, f) // output
+
+	go io.Copy(f, c) // input
+	io.Copy(c, f)    // output
 
 	return nil
 }
@@ -225,13 +225,6 @@ func (c *CommandSession) wait() (code int, err error) {
 	code = c.cmd.ProcessState.ExitCode()
 	c.fmtLog("command_return %d", code)
 	return code, nil
-}
-
-// setWinsize sets the window size of the pty
-func (c *CommandSession) setWinsize(w, h int) {
-	c.fmtLog("term_resize %d %d", w, h)
-	syscall.Syscall(syscall.SYS_IOCTL, c.cmdPty.Fd(), uintptr(syscall.TIOCSWINSZ),
-		uintptr(unsafe.Pointer(&struct{ h, w, x, y uint16 }{uint16(h), uint16(w), 0, 0})))
 }
 
 // finalize finalizes this SSHCommand session.
