@@ -176,8 +176,6 @@ func (c *CommandSession) startRegular() error {
 
 // startPty starts a session that requested a pty
 func (c *CommandSession) startPty() error {
-	c.fmtLog("in startpty")
-
 	// create a new command and setup the term environment variable
 	ptyReq, winCh, _ := c.Pty()
 	c.cmd.Env = append(c.cmd.Env, fmt.Sprintf("TERM=%s", ptyReq.Term))
