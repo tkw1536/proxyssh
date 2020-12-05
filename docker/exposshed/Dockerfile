@@ -1,0 +1,42 @@
+FROM golang:alpine as build
+
+# Create a www-data user
+ENV USER=www-data
+ENV UID=82
+RUN adduser \
+    --disabled-password \
+    --gecos "" \
+    --home "/nonexistent" \
+    --shell "/sbin/nologin" \
+    --no-create-home \
+    --uid "${UID}" \
+    "${USER}"
+
+# Make a volume under data for the user
+RUN mkdir -p /data/keys/ && chown -R www-data:www-data /data/ && chmod -R 777 /data/
+
+# Build the exposshed
+ADD . /app/src/github.com/tkw1536/proxyssh
+WORKDIR /app/src/github.com/tkw1536/proxyssh/
+RUN CGO_ENABLED=0 GOOS=linux go build -o /exposshed ./cmd/exposshed
+
+# Build an image from scratch
+FROM scratch
+
+# Copy user and password
+COPY --from=build /etc/passwd /etc/passwd
+COPY --from=build /etc/group /etc/group
+
+# Copy over executable
+COPY --from=build /exposshed /exposshed
+
+# Copy over and make data volume
+COPY --from=build /data/ /data/
+VOLUME /data/
+
+# drop privilidges
+USER www-data:www-data
+
+EXPOSE 2222
+ENTRYPOINT ["/exposshed", "-hostkey", "/data/keys/hostkey"]
+CMD [""]

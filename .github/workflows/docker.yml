@@ -9,7 +9,7 @@ jobs:
   publish:
     strategy:
       matrix:
-        dockerimage: ["dockersshd", "simplesshd"]
+        dockerimage: ["dockersshd", "simplesshd", "exposshed"]
     name: Publish '${{ matrix.dockerimage }}' image
     runs-on: ubuntu-latest
     steps:

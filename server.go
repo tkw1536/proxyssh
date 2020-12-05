@@ -19,10 +19,6 @@ type Options struct {
 	// The shell is passed to exec.LookPath().
 	Shell string
 
-	// DisableShell allows disabling the shell access.
-	// This can be used to e.g. allow create a server that only forwards ports.
-	DisableShell bool
-
 	// ForwardAddresses are addresses that port forwarding is allowed for.
 	ForwardAddresses []utils.NetworkAddress
 	// ReverseAddresses are addresses that reverse port forwarding is allowed for.
@@ -41,13 +37,8 @@ type Options struct {
 // It uses the provided options, and returns the new server that was created.
 // It returns the new server that was created.
 func NewProxySSHServer(logger utils.Logger, opts Options) (server *ssh.Server) {
-
-	var handler ssh.Handler
-	switch {
-	case opts.DisableShell:
-		handler = HandleNoCommand(logger)
-	default:
-		handler = HandleShellCommand(logger, func(s ssh.Session) ([]string, error) {
+	server = &ssh.Server{
+		Handler: HandleShellCommand(logger, func(s ssh.Session) ([]string, error) {
 			command := s.Command()
 			if len(command) == 0 {
 				// no arguments were provided => run /bin/bash
@@ -57,11 +48,7 @@ func NewProxySSHServer(logger utils.Logger, opts Options) (server *ssh.Server) {
 				command = []string{opts.Shell, "-c", strings.Join(command, " ")}
 			}
 			return command, nil
-		})
-	}
-
-	server = &ssh.Server{
-		Handler: handler,
+		}),
 
 		Addr:        opts.ListenAddress,
 		IdleTimeout: opts.IdleTimeout,

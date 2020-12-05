@@ -1,23 +1,12 @@
-// Command simplesshd provides a simple ssh daemon that works similar to OpenSSH.
-// It accepts connections on port 2222 from any interface by default.
+// Command exposshed provides an daemon that allows clients to use local and remote port forwarding.
+// It accepts connections on port 2222 from any interface by default, but does not provide shell interface.
 //
-// This command is not intended to be used in production.
-// The various defaults are unsafe.
-// It exists to demonstrate the functionality of the proxyssh package.
+// This command is not intended to be used on a public interface
 //
 // Overview
 //
 // When a connection is received no authentication is performed and it is accepted by default.
-//
-// When an SSH client requests a session this daemon executes a shell command.
-// By default, the shell used is /bin/bash, but this can be configured.
-// This shell command is executed as the user running the simplesshd command.
-// When arguments are provided via the ssh command, these are passed to the command.
-// When the client requests to allocate a pty, a pty is created.
-// The daemon then proxies the input and output streams between the connection and the executed process.
-//
-// This daemon furthermore allows Port Forwarding and Reverse Port Forwarding.
-// This is only allowed to a limited set of Network Addresses, these have to be provided via arguments.
+// It then permits port forwarding and reverse port forwarding as configured using the '-L' and '-R' flags.
 //
 // Configuration
 //
@@ -27,18 +16,6 @@
 // By default connections on any interface on port 2222 will be accepted.
 // This can be changed using this argument.
 //
-//  -shell executable
-//
-// When executing a user program the '/bin/bash' shell is used by default.
-// This argument allows to use a different shell instead.
-// The shell is looked up in $PATH.
-//
-// When an ssh session is started without a provided command, proxyssh starts the shell without any arguments.
-// When the user provides a command to run, it is passed to the shell using a '-c' argument.
-// For example, suppose the shell is /bin/bash and the user requests the command 'ls -alh'.
-// Then this program will execute the command:
-//   /bin/bash -c "ls -alh"
-// No escaping is performed on the user-provided shell command.
 //
 //  -L host:port, -R host:port
 //
@@ -58,7 +35,7 @@
 //
 //  -timeout time
 //
-// By default, SSH connections are terminated after one hour of inactivity.
+// By default, SSH connections are terminated after twelve hours of inactivity.
 // This timeout can be customized using this flag.
 // The time argument should be a sequence of  numbers follows by their units.
 // Valid units are "ns", "us", "ms", "s", "m" and "h".
@@ -81,10 +58,11 @@ var logger = log.New(os.Stderr, "", log.LstdFlags)
 
 func main() {
 	// init
-	server := proxyssh.NewProxySSHServer(logger, proxyssh.Options{
-		ListenAddress:    listenAddress,
-		IdleTimeout:      idleTimeout,
-		Shell:            shell,
+	server := proxyssh.NewForwardingSSHServer(logger, proxyssh.Options{
+		ListenAddress: listenAddress,
+
+		IdleTimeout: idleTimeout,
+
 		ForwardAddresses: forwardPorts,
 		ReverseAddresses: reversePorts,
 	})
@@ -107,9 +85,7 @@ func main() {
 var (
 	listenAddress = ":2222"
 
-	idleTimeout = time.Hour
-
-	shell = "/bin/bash"
+	idleTimeout = 12 * time.Hour
 
 	forwardPorts = utils.NetworkAddressListVar(nil)
 	reversePorts = utils.NetworkAddressListVar(nil)
@@ -131,7 +107,6 @@ func init() {
 
 	flag.StringVar(&listenAddress, "port", listenAddress, "Port to listen on")
 	flag.DurationVar(&idleTimeout, "timeout", idleTimeout, "Timeout to kill inactive connections after")
-	flag.StringVar(&shell, "shell", shell, "Shell to use")
 
 	flag.Var(&forwardPorts, "L", "Ports to allow local forwarding for")
 	flag.Var(&reversePorts, "R", "Ports to allow reverse forwarding for")

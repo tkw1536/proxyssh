@@ -8,6 +8,23 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 )
 
+// NewForwardingSSHServer makes a new Server that has port forwarding enabled, but no shell access.
+//
+// It uses the provided options, and returns the new server that was created.
+// The 'shell' argument from options is ignored.
+// It returns the new server that was created.
+func NewForwardingSSHServer(logger utils.Logger, opts Options) (server *ssh.Server) {
+	server = &ssh.Server{
+		Handler: HandleNoCommand(logger),
+
+		Addr:        opts.ListenAddress,
+		IdleTimeout: opts.IdleTimeout,
+	}
+	AllowPortForwarding(logger, server, opts.ForwardAddresses, opts.ReverseAddresses)
+
+	return
+}
+
 // HandleNoCommand creates an ssh.Handler that provides a no-op handler for a shell session.
 func HandleNoCommand(logger utils.Logger) ssh.Handler {
 	return func(session ssh.Session) {
