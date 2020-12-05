@@ -40,6 +40,11 @@
 //   /bin/bash -c "ls -alh"
 // No escaping is performed on the user-provided shell command.
 //
+//  -no-shell
+//
+// Instead of allowing the user to execute a shell, provide a no-op terminal.
+// This is useful if you only want to allow port forwarding, see '-L' and '-R' arguments.
+//
 //  -L host:port, -R host:port
 //
 // To configure the ports to allow traffic to and from certain hosts in the local network via the ssh server, the '-L' and '-R' flags can be used.
@@ -85,6 +90,7 @@ func main() {
 		ListenAddress:    listenAddress,
 		IdleTimeout:      idleTimeout,
 		Shell:            shell,
+		DisableShell:     noShell,
 		ForwardAddresses: forwardPorts,
 		ReverseAddresses: reversePorts,
 	})
@@ -109,6 +115,8 @@ var (
 
 	idleTimeout = time.Hour
 
+	noShell = false
+
 	shell = "/bin/bash"
 
 	forwardPorts = utils.NetworkAddressListVar(nil)
@@ -132,6 +140,7 @@ func init() {
 	flag.StringVar(&listenAddress, "port", listenAddress, "Port to listen on")
 	flag.DurationVar(&idleTimeout, "timeout", idleTimeout, "Timeout to kill inactive connections after")
 	flag.StringVar(&shell, "shell", shell, "Shell to use")
+	flag.BoolVar(&noShell, "no-shell", noShell, "Do not offer shell access to the client and instead run a no-op terminal. ")
 
 	flag.Var(&forwardPorts, "L", "Ports to allow local forwarding for")
 	flag.Var(&reversePorts, "R", "Ports to allow reverse forwarding for")
