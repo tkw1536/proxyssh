@@ -38,5 +38,6 @@ VOLUME /data/
 USER www-data:www-data
 
 EXPOSE 2222
+EXPOSE 8080
 ENTRYPOINT ["/exposshed", "-hostkey", "/data/keys/hostkey"]
 CMD [""]
