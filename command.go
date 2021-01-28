@@ -80,7 +80,6 @@ func NewCommandSession(logger utils.Logger, session ssh.Session, command string,
 	// exec.Command internally does use LookPath(), but doesn't return an error
 	// Instead we explicitly call LookPath() to intercept the error
 
-	var exe string
 	exe, err := exec.LookPath(command)
 	if err != nil {
 		err = errors.Wrapf(err, "Can't find %s in path", command)
