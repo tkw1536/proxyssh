@@ -23,18 +23,18 @@ For a more detailed overall documentation, see the [godoc](https://pkg.go.dev/gi
 
 This repository contains Dockerfiles for all of the examples, called `docker/${example}/Dockerfile`. 
 
-These are available as the GitHub Packages [dockersshd](https://github.com/tkw1536/proxyssh/packages/391072), [simplesshd](https://github.com/tkw1536/proxyssh/packages/391070) and [exposshed](https://github.com/tkw1536/proxyssh/packages/529675) respectively. 
+These are available as the GitHub Packages [dockersshd](https://github.com/users/tkw1536/packages/container/package/dockersshd), [simplesshd](https://github.com/users/tkw1536/packages/container/package/simplesshd) and [exposshed](https://github.com/users/tkw1536/packages/container/package/exposshed) respectively. 
 
 The `dockersshd` image can be run as follows:
 
 ```bash
-docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -p 2222:2222 docker.pkg.github.com/tkw1536/proxyssh/dockersshd:latest
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -p 2222:2222 ghcr.io/tkw1536/dockersshd:latest
 ```
 
 To e.g. allow clients to expose port 8080 the `exposshed` image can be run as follows
 
 ```bash
-docker run -t -v /path/to/hostkeys:/data/ -i --rm -p 2222:localhost:2222 -p 8080:8080 docker.pkg.github.com/tkw1536/proxyssh/exposshed:latest -R 0.0.0.0:8080
+docker run -t -v /path/to/hostkeys:/data/ -i --rm -p 2222:localhost:2222 -p 8080:8080 ghcr.io/tkw1536/exposshed:latest -R 0.0.0.0:8080
 ```
 
 For legacy reasons, the `dockersshd` Image is also available as the automated build [tkw01536/proxyssh](https://hub.docker.com/r/tkw01536/proxyssh). 
