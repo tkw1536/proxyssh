@@ -1,11 +1,12 @@
-FROM golang:alpine as builder
-RUN apk add --no-cache git
+# Stage 1: Build simplesshd
+FROM golang as build
 
 ADD . /app/src/github.com/tkw1536/proxyssh
 WORKDIR /app/src/github.com/tkw1536/proxyssh/
-RUN go build -o /simplesshd ./cmd/simplesshd
+RUN CGO_ENABLED=0 GOOS=linux go build -o /simplesshd ./cmd/simplesshd
 
+# Stage 2: Put it in the runtime image
 FROM alpine
 EXPOSE 2222
-COPY --from=builder /simplesshd /simplesshd
+COPY --from=build /simplesshd /simplesshd
 ENTRYPOINT [ "/simplesshd" "-shell" "/bin/sh" ]
