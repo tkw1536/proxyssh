@@ -1,4 +1,4 @@
-package dockerproxy
+package docker
 
 import (
 	"testing"

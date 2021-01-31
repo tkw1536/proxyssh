@@ -49,8 +49,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/tkw1536/proxyssh"
 	"github.com/tkw1536/proxyssh/legal"
+	"github.com/tkw1536/proxyssh/server"
+	"github.com/tkw1536/proxyssh/server/forwarder"
+	"github.com/tkw1536/proxyssh/server/shell"
 	"github.com/tkw1536/proxyssh/utils"
 )
 
@@ -58,7 +60,7 @@ var logger = log.New(os.Stderr, "", log.LstdFlags)
 
 func main() {
 	// init
-	server := proxyssh.NewForwardingSSHServer(logger, proxyssh.Options{
+	sshserver := forwarder.NewForwardingSSHServer(logger, shell.Options{
 		ListenAddress: listenAddress,
 
 		IdleTimeout: idleTimeout,
@@ -68,18 +70,18 @@ func main() {
 	})
 
 	// load host keys
-	err := proxyssh.UseOrMakeHostKey(logger, server, hostKeyPath+"_rsa", proxyssh.RSAAlgorithm)
+	err := server.UseOrMakeHostKey(logger, sshserver, hostKeyPath+"_rsa", server.RSAAlgorithm)
 	if err != nil {
 		logger.Fatal(err)
 	}
-	err = proxyssh.UseOrMakeHostKey(logger, server, hostKeyPath+"_ed25519", proxyssh.ED25519Algorithm)
+	err = server.UseOrMakeHostKey(logger, sshserver, hostKeyPath+"_ed25519", server.ED25519Algorithm)
 	if err != nil {
 		logger.Fatal(err)
 	}
 
 	// and run
 	logger.Printf("Listening on %s", listenAddress)
-	logger.Fatal(server.ListenAndServe())
+	logger.Fatal(sshserver.ListenAndServe())
 }
 
 var (

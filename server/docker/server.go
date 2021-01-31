@@ -1,4 +1,4 @@
-package dockerproxy
+package docker
 
 import (
 	"strings"
@@ -6,7 +6,8 @@ import (
 
 	"github.com/docker/docker/client"
 	"github.com/gliderlabs/ssh"
-	"github.com/tkw1536/proxyssh"
+	"github.com/tkw1536/proxyssh/server"
+	"github.com/tkw1536/proxyssh/server/shell"
 	"github.com/tkw1536/proxyssh/utils"
 )
 
@@ -87,14 +88,14 @@ type Options struct {
 // This function calls the logger for every important event.
 // Furthermore, it returns a new pre-configured ssh.Server instance.
 // The instance may be modified, however it is in the responsibility of the caller to ensure that this does not interfere with the provided functionality.
-func NewProxy(logger utils.Logger, opts Options) (server *ssh.Server) {
+func NewProxy(logger utils.Logger, opts Options) (sshserver *ssh.Server) {
 
 	// BUG: We find the unique container associated to a provided server twice.
 	// This could technically be abused for timing attacks.
 	// But I am not sure how to avoid this.
 
-	server = &ssh.Server{
-		Handler: proxyssh.HandleShellCommand(logger, func(s ssh.Session) (command []string, err error) {
+	sshserver = &ssh.Server{
+		Handler: shell.HandleCommand(logger, func(s ssh.Session) (command []string, err error) {
 			userCommand := s.Command()
 
 			// determine the command to run inside the docker container
@@ -113,10 +114,10 @@ func NewProxy(logger utils.Logger, opts Options) (server *ssh.Server) {
 			}
 
 			// wrap this inside a 'docker exec' command
-			command = DockerExec(s, container.ID, command, "", "")
+			command = Exec(s, container.ID, command, "", "")
 			return
 		}),
-		PublicKeyHandler: proxyssh.AuthorizeKeys(logger, func(ctx ssh.Context) ([]ssh.PublicKey, error) {
+		PublicKeyHandler: server.AuthorizeKeys(logger, func(ctx ssh.Context) ([]ssh.PublicKey, error) {
 			// find the (unique) associated container
 			container, err := FindUniqueContainer(opts.Client, opts.DockerLabelUser, ctx.User())
 			if err != nil {
@@ -138,11 +139,11 @@ func NewProxy(logger utils.Logger, opts Options) (server *ssh.Server) {
 	// if the explicitly requested to turn off authentication, do it
 	if opts.DisableAuthentication {
 		logger.Print("WARNING: Disabling authentication. Anyone will be able to connect. ")
-		server.PublicKeyHandler = nil
+		sshserver.PublicKeyHandler = nil
 	}
 
 	// setup forwarding
-	proxyssh.AllowPortForwarding(logger, server, opts.ForwardAddresses, opts.ReverseAddresses)
+	server.AllowPortForwarding(logger, sshserver, opts.ForwardAddresses, opts.ReverseAddresses)
 
 	return
 }

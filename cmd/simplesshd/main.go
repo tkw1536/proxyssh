@@ -72,8 +72,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/tkw1536/proxyssh"
 	"github.com/tkw1536/proxyssh/legal"
+	"github.com/tkw1536/proxyssh/server"
+	"github.com/tkw1536/proxyssh/server/shell"
 	"github.com/tkw1536/proxyssh/utils"
 )
 
@@ -81,27 +82,27 @@ var logger = log.New(os.Stderr, "", log.LstdFlags)
 
 func main() {
 	// init
-	server := proxyssh.NewProxySSHServer(logger, proxyssh.Options{
+	sshserver := shell.NewProxySSHServer(logger, shell.Options{
 		ListenAddress:    listenAddress,
 		IdleTimeout:      idleTimeout,
-		Shell:            shell,
+		Shell:            shellPath,
 		ForwardAddresses: forwardPorts,
 		ReverseAddresses: reversePorts,
 	})
 
 	// load host keys
-	err := proxyssh.UseOrMakeHostKey(logger, server, hostKeyPath+"_rsa", proxyssh.RSAAlgorithm)
+	err := server.UseOrMakeHostKey(logger, sshserver, hostKeyPath+"_rsa", server.RSAAlgorithm)
 	if err != nil {
 		logger.Fatal(err)
 	}
-	err = proxyssh.UseOrMakeHostKey(logger, server, hostKeyPath+"_ed25519", proxyssh.ED25519Algorithm)
+	err = server.UseOrMakeHostKey(logger, sshserver, hostKeyPath+"_ed25519", server.ED25519Algorithm)
 	if err != nil {
 		logger.Fatal(err)
 	}
 
 	// and run
 	logger.Printf("Listening on %s", listenAddress)
-	logger.Fatal(server.ListenAndServe())
+	logger.Fatal(sshserver.ListenAndServe())
 }
 
 var (
@@ -109,7 +110,7 @@ var (
 
 	idleTimeout = time.Hour
 
-	shell = "/bin/bash"
+	shellPath = "/bin/bash"
 
 	forwardPorts = utils.NetworkAddressListVar(nil)
 	reversePorts = utils.NetworkAddressListVar(nil)
@@ -131,7 +132,7 @@ func init() {
 
 	flag.StringVar(&listenAddress, "port", listenAddress, "Port to listen on")
 	flag.DurationVar(&idleTimeout, "timeout", idleTimeout, "Timeout to kill inactive connections after")
-	flag.StringVar(&shell, "shell", shell, "Shell to use")
+	flag.StringVar(&shellPath, "shell", shellPath, "Shell to use")
 
 	flag.Var(&forwardPorts, "L", "Ports to allow local forwarding for")
 	flag.Var(&reversePorts, "R", "Ports to allow reverse forwarding for")

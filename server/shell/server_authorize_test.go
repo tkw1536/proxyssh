@@ -1,9 +1,10 @@
-package proxyssh
+package shell
 
 import (
 	"testing"
 
 	"github.com/gliderlabs/ssh"
+	"github.com/tkw1536/proxyssh/server"
 	"github.com/tkw1536/proxyssh/testutils"
 	gossh "golang.org/x/crypto/ssh"
 )
@@ -15,7 +16,7 @@ var (
 )
 
 func TestAuthorizeKeys(t *testing.T) {
-	testServer.PublicKeyHandler = AuthorizeKeys(testutils.GetTestLogger(), func(ctx ssh.Context) (keys []ssh.PublicKey, err error) {
+	testServer.PublicKeyHandler = server.AuthorizeKeys(testutils.GetTestLogger(), func(ctx ssh.Context) (keys []ssh.PublicKey, err error) {
 		switch ctx.User() {
 		// user1 has keys allowedPublicKeyA dn allowedPublicKeyB
 		case "user1":

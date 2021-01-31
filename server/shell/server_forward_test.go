@@ -1,4 +1,4 @@
-package proxyssh
+package shell
 
 import (
 	"io/ioutil"

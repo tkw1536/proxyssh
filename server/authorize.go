@@ -1,4 +1,4 @@
-package proxyssh
+package server
 
 import (
 	"github.com/gliderlabs/ssh"

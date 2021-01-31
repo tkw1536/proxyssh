@@ -1,4 +1,4 @@
-package proxyssh
+package server
 
 import (
 	"crypto/ed25519"

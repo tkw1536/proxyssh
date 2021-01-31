@@ -1,4 +1,4 @@
-package dockerproxy
+package docker
 
 import (
 	"context"
@@ -13,11 +13,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-// DockerExec creates a command  that executes a process in a given docker container
+// Exec creates a command  that executes a process in a given docker container
 //
 // The command returned will depend on the 'docker' executable being availabel on the underlying system.
 // The commnd will not prefix the entrypoing.
-func DockerExec(s ssh.Session, containerID string, command []string, workdir string, user string) (exec []string) {
+func Exec(s ssh.Session, containerID string, command []string, workdir string, user string) (exec []string) {
 	exec = []string{"docker", "exec", "--interactive"}
 
 	// ensure it's a tty when we asked for one

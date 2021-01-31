@@ -1,9 +1,12 @@
-package proxyssh
+// Package forwarder implements an ssh server that only allows forwards, but no shell command
+package forwarder
 
 import (
 	"io"
 
 	"github.com/gliderlabs/ssh"
+	"github.com/tkw1536/proxyssh/server"
+	"github.com/tkw1536/proxyssh/server/shell"
 	"github.com/tkw1536/proxyssh/utils"
 	"golang.org/x/crypto/ssh/terminal"
 )
@@ -13,14 +16,14 @@ import (
 // It uses the provided options, and returns the new server that was created.
 // The 'shell' argument from options is ignored.
 // It returns the new server that was created.
-func NewForwardingSSHServer(logger utils.Logger, opts Options) (server *ssh.Server) {
-	server = &ssh.Server{
+func NewForwardingSSHServer(logger utils.Logger, opts shell.Options) (sshserver *ssh.Server) {
+	sshserver = &ssh.Server{
 		Handler: HandleNoCommand(logger),
 
 		Addr:        opts.ListenAddress,
 		IdleTimeout: opts.IdleTimeout,
 	}
-	AllowPortForwarding(logger, server, opts.ForwardAddresses, opts.ReverseAddresses)
+	server.AllowPortForwarding(logger, sshserver, opts.ForwardAddresses, opts.ReverseAddresses)
 
 	return
 }

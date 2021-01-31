@@ -100,9 +100,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/tkw1536/proxyssh"
-	"github.com/tkw1536/proxyssh/dockerproxy"
 	"github.com/tkw1536/proxyssh/legal"
+	"github.com/tkw1536/proxyssh/server"
+	"github.com/tkw1536/proxyssh/server/docker"
 	"github.com/tkw1536/proxyssh/utils"
 
 	"github.com/docker/docker/client"
@@ -112,7 +112,7 @@ var logger = log.New(os.Stderr, "", log.LstdFlags)
 
 func main() {
 	// init
-	server := dockerproxy.NewProxy(logger, dockerproxy.Options{
+	sshserver := docker.NewProxy(logger, docker.Options{
 		Client: cli,
 
 		ListenAddress: listenAddress,
@@ -131,18 +131,18 @@ func main() {
 	})
 
 	// load host keys
-	err := proxyssh.UseOrMakeHostKey(logger, server, hostKeyPath+"_rsa", proxyssh.RSAAlgorithm)
+	err := server.UseOrMakeHostKey(logger, sshserver, hostKeyPath+"_rsa", server.RSAAlgorithm)
 	if err != nil {
 		logger.Fatal(err)
 	}
-	err = proxyssh.UseOrMakeHostKey(logger, server, hostKeyPath+"_ed25519", proxyssh.ED25519Algorithm)
+	err = server.UseOrMakeHostKey(logger, sshserver, hostKeyPath+"_ed25519", server.ED25519Algorithm)
 	if err != nil {
 		logger.Fatal(err)
 	}
 
 	// and run
 	logger.Printf("Listening on %s", listenAddress)
-	logger.Fatal(server.ListenAndServe())
+	logger.Fatal(sshserver.ListenAndServe())
 }
 
 var (
