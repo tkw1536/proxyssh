@@ -113,7 +113,8 @@ func NewProxy(logger utils.Logger, opts Options) (sshserver *ssh.Server) {
 				return nil, err
 			}
 
-			return NewLegacyEngineProcess(s, container.ID, command, "", "")
+			return NewEngineProcess(s.Context(), s, container.ID, opts.Client, command)
+			// return NewLegacyEngineProcess(s, container.ID, command, "", "")
 		}),
 		PublicKeyHandler: server.AuthorizeKeys(logger, func(ctx ssh.Context) ([]ssh.PublicKey, error) {
 			// find the (unique) associated container
