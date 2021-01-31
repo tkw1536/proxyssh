@@ -6,8 +6,8 @@ import (
 
 	"github.com/docker/docker/client"
 	"github.com/gliderlabs/ssh"
+	"github.com/tkw1536/proxyssh"
 	"github.com/tkw1536/proxyssh/server"
-	"github.com/tkw1536/proxyssh/server/shell"
 	"github.com/tkw1536/proxyssh/utils"
 )
 
@@ -95,13 +95,13 @@ func NewProxy(logger utils.Logger, opts Options) (sshserver *ssh.Server) {
 	// But I am not sure how to avoid this.
 
 	sshserver = &ssh.Server{
-		Handler: shell.HandleCommand(logger, func(s ssh.Session) (command []string, err error) {
+		Handler: proxyssh.HandleProcess(logger, func(s ssh.Session) (process proxyssh.Process, err error) {
 			userCommand := s.Command()
 
 			// determine the command to run inside the docker container
 			// when no arguments are given, use the shell.
 			// else use shell -c 'arguments'
-			command = make([]string, 1, 3)
+			command := make([]string, 1, 3)
 			command[0] = opts.ContainerShell
 			if len(userCommand) > 0 {
 				command = append(command, "-c", strings.Join(userCommand, " "))
@@ -113,9 +113,7 @@ func NewProxy(logger utils.Logger, opts Options) (sshserver *ssh.Server) {
 				return nil, err
 			}
 
-			// wrap this inside a 'docker exec' command
-			command = Exec(s, container.ID, command, "", "")
-			return
+			return NewLegacyEngineProcess(s, container.ID, command, "", "")
 		}),
 		PublicKeyHandler: server.AuthorizeKeys(logger, func(ctx ssh.Context) ([]ssh.PublicKey, error) {
 			// find the (unique) associated container
@@ -125,7 +123,7 @@ func NewProxy(logger utils.Logger, opts Options) (sshserver *ssh.Server) {
 			}
 
 			// find the keys associated to this container
-			keys := FindContainerKeys(opts.Client, container, DockerSSHAuthOptions{
+			keys := FindContainerKeys(opts.Client, container, SSHAuthOptions{
 				LabelFile: opts.DockerLabelAuthFile,
 			})
 

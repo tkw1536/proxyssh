@@ -112,7 +112,7 @@ func TestFindContainerKeys(t *testing.T) {
 		// tests for finding keys in environment variable
 
 		t.Run("container with unset LabelKey returns no keys", func(t *testing.T) {
-			keys := FindContainerKeys(cli, findService("nolabels"), DockerSSHAuthOptions{LabelKey: "de.tkw01536.test.key"})
+			keys := FindContainerKeys(cli, findService("nolabels"), SSHAuthOptions{LabelKey: "de.tkw01536.test.key"})
 			gotLen := len(keys)
 			if gotLen != 0 {
 				t.Errorf("FindContainerKeys(): got len(keys) = %d, want len(keys) = 0", gotLen)
@@ -120,7 +120,7 @@ func TestFindContainerKeys(t *testing.T) {
 		})
 
 		t.Run("container with empty LabelKey returns no keys", func(t *testing.T) {
-			keys := FindContainerKeys(cli, findService("keylabel_empty"), DockerSSHAuthOptions{LabelKey: "de.tkw01536.test.key"})
+			keys := FindContainerKeys(cli, findService("keylabel_empty"), SSHAuthOptions{LabelKey: "de.tkw01536.test.key"})
 			gotLen := len(keys)
 			if gotLen != 0 {
 				t.Errorf("FindContainerKeys(): got len(keys) = %d, want len(keys) = 0", gotLen)
@@ -128,7 +128,7 @@ func TestFindContainerKeys(t *testing.T) {
 		})
 
 		t.Run("container with invalid LabelKey returns no keys", func(t *testing.T) {
-			keys := FindContainerKeys(cli, findService("keylabel_invalid"), DockerSSHAuthOptions{LabelKey: "de.tkw01536.test.key"})
+			keys := FindContainerKeys(cli, findService("keylabel_invalid"), SSHAuthOptions{LabelKey: "de.tkw01536.test.key"})
 			gotLen := len(keys)
 			if gotLen != 0 {
 				t.Errorf("FindContainerKeys(): got len(keys) = %d, want len(keys) = 0", gotLen)
@@ -136,7 +136,7 @@ func TestFindContainerKeys(t *testing.T) {
 		})
 
 		t.Run("container with valid label returns single key", func(t *testing.T) {
-			keys := FindContainerKeys(cli, findService("keylabel_valid"), DockerSSHAuthOptions{LabelKey: "de.tkw01536.test.key"})
+			keys := FindContainerKeys(cli, findService("keylabel_valid"), SSHAuthOptions{LabelKey: "de.tkw01536.test.key"})
 			gotLen := len(keys)
 			if gotLen != 1 {
 				t.Errorf("FindContainerKeys(): got len(keys) = %d, want len(keys) = 1", gotLen)
@@ -150,7 +150,7 @@ func TestFindContainerKeys(t *testing.T) {
 		// tests for finding key in files
 
 		t.Run("container without labels returns no keys", func(t *testing.T) {
-			keys := FindContainerKeys(cli, findService("nolabels"), DockerSSHAuthOptions{LabelFile: "de.tkw01536.test.file"})
+			keys := FindContainerKeys(cli, findService("nolabels"), SSHAuthOptions{LabelFile: "de.tkw01536.test.file"})
 			gotLen := len(keys)
 			if gotLen != 0 {
 				t.Errorf("FindContainerKeys(): got len(keys) = %d, want len(keys) = 0", gotLen)
@@ -158,7 +158,7 @@ func TestFindContainerKeys(t *testing.T) {
 		})
 
 		t.Run("container with non-existent file returns no keys", func(t *testing.T) {
-			keys := FindContainerKeys(cli, findService("filelabel_invalid"), DockerSSHAuthOptions{LabelFile: "de.tkw01536.test.file"})
+			keys := FindContainerKeys(cli, findService("filelabel_invalid"), SSHAuthOptions{LabelFile: "de.tkw01536.test.file"})
 			gotLen := len(keys)
 			if gotLen != 0 {
 				t.Errorf("FindContainerKeys(): got len(keys) = %d, want len(keys) = 0", gotLen)
@@ -166,7 +166,7 @@ func TestFindContainerKeys(t *testing.T) {
 		})
 
 		t.Run("container with one valid file label returns single key", func(t *testing.T) {
-			keys := FindContainerKeys(cli, findService("filelabel_valid_one"), DockerSSHAuthOptions{LabelFile: "de.tkw01536.test.file"})
+			keys := FindContainerKeys(cli, findService("filelabel_valid_one"), SSHAuthOptions{LabelFile: "de.tkw01536.test.file"})
 			gotLen := len(keys)
 			if gotLen != 1 {
 				t.Errorf("FindContainerKeys(): got len(keys) = %d, want len(keys) = 1", gotLen)
@@ -178,7 +178,7 @@ func TestFindContainerKeys(t *testing.T) {
 		})
 
 		t.Run("container with two files but only one valid one returns single key", func(t *testing.T) {
-			keys := FindContainerKeys(cli, findService("filelabel_two_one_valid"), DockerSSHAuthOptions{LabelFile: "de.tkw01536.test.file"})
+			keys := FindContainerKeys(cli, findService("filelabel_two_one_valid"), SSHAuthOptions{LabelFile: "de.tkw01536.test.file"})
 			gotLen := len(keys)
 			if gotLen != 1 {
 				t.Errorf("FindContainerKeys(): got len(keys) = %d, want len(keys) = 1", gotLen)
@@ -190,7 +190,7 @@ func TestFindContainerKeys(t *testing.T) {
 		})
 
 		t.Run("container with two valid files returns both keys", func(t *testing.T) {
-			keys := FindContainerKeys(cli, findService("filelabel_two_two_valid"), DockerSSHAuthOptions{LabelFile: "de.tkw01536.test.file"})
+			keys := FindContainerKeys(cli, findService("filelabel_two_two_valid"), SSHAuthOptions{LabelFile: "de.tkw01536.test.file"})
 			gotLen := len(keys)
 			if gotLen != 2 {
 				t.Errorf("FindContainerKeys(): got len(keys) = %d, want len(keys) = 2", gotLen)

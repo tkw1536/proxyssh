@@ -13,34 +13,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Exec creates a command  that executes a process in a given docker container
-//
-// The command returned will depend on the 'docker' executable being availabel on the underlying system.
-// The commnd will not prefix the entrypoing.
-func Exec(s ssh.Session, containerID string, command []string, workdir string, user string) (exec []string) {
-	exec = []string{"docker", "exec", "--interactive"}
-
-	// ensure it's a tty when we asked for one
-	if _, _, isPty := s.Pty(); isPty {
-		exec = append(exec, "--tty")
-	}
-
-	// append the workdir
-	if workdir != "" {
-		exec = append(exec, "--workdir", workdir)
-	}
-
-	// append the user
-	if user != "" {
-		exec = append(exec, "--user", user)
-	}
-
-	// append the container id and command
-	exec = append(exec, containerID)
-	exec = append(exec, command...)
-	return
-}
-
 // ErrContainerNotUnique is an error that is returned when a container is not unique
 var ErrContainerNotUnique = errors.New("No unique container found")
 
@@ -73,8 +45,8 @@ func FindUniqueContainer(cli *client.Client, key string, value string) (containe
 	return containers[0], nil
 }
 
-// DockerSSHAuthOptions contain options that configure authentication via ssh
-type DockerSSHAuthOptions struct {
+// SSHAuthOptions contain options that configure authentication via ssh
+type SSHAuthOptions struct {
 	// If set, check if a candidate container contains an ssh key in the provided label
 	LabelKey string
 
@@ -88,7 +60,7 @@ type DockerSSHAuthOptions struct {
 // Location of stored credentials is determined by options.
 //
 // This function will ignore all errors and or invalid values.
-func FindContainerKeys(cli *client.Client, container types.Container, options DockerSSHAuthOptions) (keys []ssh.PublicKey) {
+func FindContainerKeys(cli *client.Client, container types.Container, options SSHAuthOptions) (keys []ssh.PublicKey) {
 
 	// Check the key label of a provided container for ssh public keys
 	// Note that if LabelKey is "", hasKey will return false because a docker label can not be blank.
