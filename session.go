@@ -5,8 +5,8 @@ import (
 	"io"
 	"os"
 
+	"github.com/creack/pty"
 	"github.com/gliderlabs/ssh"
-	"github.com/kr/pty"
 	"github.com/pkg/errors"
 	"github.com/tkw1536/proxyssh/utils"
 )
