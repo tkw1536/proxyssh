@@ -3,9 +3,10 @@
 !go.mod
 !go.sum
 !*.go
-!dockerproxy
-!legal
-!proxyssh
-!utils
-!testutils
+
 !cmd
+!docker
+!legal
+!server
+!testutils
+!utils
