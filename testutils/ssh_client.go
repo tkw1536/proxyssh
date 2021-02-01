@@ -3,6 +3,7 @@ package testutils
 import (
 	"bytes"
 	"net"
+	"time"
 
 	"golang.org/x/crypto/ssh"
 )
@@ -89,6 +90,10 @@ func RunTestServerCommand(address string, options ssh.ClientConfig, command, std
 	} else {
 		return
 	}
+
+	// HACK HACK HACK for some unknown reason the read below sometimes fails.
+	// so we wait a while for the buffer to succeed.
+	time.Sleep(time.Second / 2)
 
 	// save the buffers
 	stdout = stdoutBuf.String()
