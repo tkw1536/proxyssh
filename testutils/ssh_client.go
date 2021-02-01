@@ -67,8 +67,6 @@ func RunTestServerCommand(address string, options ssh.ClientConfig, command, std
 	if err != nil {
 		return
 	}
-	defer session.Close()
-	defer client.Close()
 
 	// setup input
 	stdinBuf := bytes.NewBufferString(stdin)
@@ -79,8 +77,10 @@ func RunTestServerCommand(address string, options ssh.ClientConfig, command, std
 	session.Stdout = &stdoutBuf
 	session.Stderr = &stderrBuf
 
-	// run the command and get the exit code of the error
+	// run the command, close the session, and check exit code
 	err = session.Run(command)
+	client.Close()
+	session.Close()
 	if err == nil {
 		code = 0
 	} else if eerr, iseerr := err.(*ssh.ExitError); iseerr {
