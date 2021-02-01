@@ -24,8 +24,6 @@
 // This is only allowed to a limited set of Network Addresses, these have to be provided via arguments.
 // These are evaluated relative to the 'dockersshd' host, not the docker container in question.
 //
-// dockersshd internally relies on the 'docker' command being available on the host system.
-// If this is not available, connections might fail unexpectedly.
 //
 // Configuration
 //

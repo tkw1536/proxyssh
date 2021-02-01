@@ -1,11 +1,11 @@
 package proxyssh
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
 
-	"github.com/creack/pty"
 	"github.com/gliderlabs/ssh"
 	"github.com/pkg/errors"
 	"github.com/tkw1536/proxyssh/utils"
@@ -29,22 +29,25 @@ type Process interface {
 
 	// all methods in this interface are called at most once.
 
+	// Init initializes this process
+	Init(ctx context.Context, isPty bool) error
+	Start(Term string, resizeChan <-chan WindowSize, isPty bool) (*os.File, error)
+
 	// Input / Output Streams
 	Stdout() (io.ReadCloser, error)
 	Stderr() (io.ReadCloser, error)
 	Stdin() (io.WriteCloser, error)
 
-	// Start starts the process
-	Start() error
-
-	// StartPty allocates a pseudo tty and starts the process.
-	StartPty(Term string) (*os.File, error)
-
 	// Wait waits for the process and returns the exit code
 	Wait() (int, error)
 
-	// Kill attempts to kill the process
-	TryKill() (success bool)
+	// Cleanup is called to cleanup this process, usually to kill it.
+	Cleanup() (killed bool)
+}
+
+// WindowSize represents the size of the window
+type WindowSize struct {
+	Height, Width uint16
 }
 
 var errAlreadyStarted = errors.New("Session.Run(): Already started. ")
@@ -81,13 +84,18 @@ func (c *Session) Run() error {
 // start starts this session
 func (c *Session) start() (err error) {
 
-	// start either a regular or pty session
-	if _, _, isPty := c.Pty(); !isPty {
-		err = c.startRegular()
-	} else {
-		err = c.startPty()
+	// initialize the process
+	_, _, isPty := c.Pty()
+	if err := c.Process.Init(c.Session.Context(), isPty); err != nil {
+		return err
 	}
-	return
+
+	// start either a regular or pty session
+	if isPty {
+		return c.startPty()
+	}
+
+	return c.startRegular()
 }
 
 // startRegular starts running a command that did not request a pty
@@ -123,7 +131,8 @@ func (c *Session) startRegular() error {
 	}()
 
 	// and start the command
-	return c.Process.Start()
+	_, err = c.Process.Start("", nil, false)
+	return err
 }
 
 // startPty starts a session that requested a pty
@@ -131,26 +140,28 @@ func (c *Session) startPty() error {
 	// create a new command and setup the term environment variable
 	ptyReq, winCh, _ := c.Pty()
 
-	f, err := c.Process.StartPty(ptyReq.Term)
+	// create a channel for resizing the window
+	resizeChan := make(chan WindowSize)
+	go func() {
+		for win := range winCh {
+			// c.fmtLog("term_resize %d %d", win.Height, win.Width)
+			resizeChan <- WindowSize{
+				Height: uint16(win.Height),
+				Width:  uint16(win.Width),
+			}
+		}
+		close(resizeChan)
+	}()
+
+	f, err := c.Process.Start(ptyReq.Term, resizeChan, true)
 	if err != nil {
 		err = errors.Wrap(err, "pty.Start() returned error")
 		return err
 	}
 	c.fmtLog("pty_start_success")
 
-	// listen for window size changes
-	go func() {
-		for win := range winCh {
-			c.fmtLog("term_resize %d %d", win.Height, win.Width)
-			pty.Setsize(f, &pty.Winsize{
-				Rows: uint16(win.Height),
-				Cols: uint16(win.Width),
-			})
-		}
-	}()
-
 	go io.Copy(f, c) // input
-	io.Copy(c, f)    // output
+	go io.Copy(c, f) // output
 
 	return nil
 }
@@ -193,7 +204,7 @@ func (c *Session) finalize(status int, err error) {
 // killProcess tries to kill the process.
 // silences all errors
 func (c *Session) killProcess() {
-	res := c.Process.TryKill()
+	res := c.Process.Cleanup()
 	if res {
 		c.fmtLog("command_kill")
 	} else {

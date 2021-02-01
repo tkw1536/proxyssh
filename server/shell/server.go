@@ -84,6 +84,6 @@ func HandleCommand(logger utils.Logger, shellCommand func(session ssh.Session) (
 			return nil, errors.New("didn't create a process")
 		}
 
-		return NewSystemProcess(command[0], command[1:])
+		return NewSystemProcess(command[0], command[1:]), nil
 	})
 }

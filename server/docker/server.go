@@ -15,7 +15,6 @@ import (
 // For a more detailed description of some of these see the NewProxy method.
 type Options struct {
 	// Client is the docker client to be used to the docker daemon.
-	// Note that in addition to this docker client, a 'docker' binary must be available and configured appropriatly.
 	Client *client.Client
 
 	// ListenAddress is the Address this Proxy will listen on.
@@ -82,9 +81,6 @@ type Options struct {
 //
 // This server optionally allows forwarding (and reverse forwarding) from a given list of hostnames and ports.
 //
-// This function assumed that the 'docker' client binary is available on the host that it is running on.
-// This is because of the unreliability of the docker API.
-//
 // This function calls the logger for every important event.
 // Furthermore, it returns a new pre-configured ssh.Server instance.
 // The instance may be modified, however it is in the responsibility of the caller to ensure that this does not interfere with the provided functionality.
@@ -113,8 +109,7 @@ func NewProxy(logger utils.Logger, opts Options) (sshserver *ssh.Server) {
 				return nil, err
 			}
 
-			return NewEngineProcess(s.Context(), s, container.ID, opts.Client, command)
-			// return NewLegacyEngineProcess(s, container.ID, command, "", "")
+			return NewEngineProcess(opts.Client, container.ID, command), nil
 		}),
 		PublicKeyHandler: server.AuthorizeKeys(logger, func(ctx ssh.Context) ([]ssh.PublicKey, error) {
 			// find the (unique) associated container

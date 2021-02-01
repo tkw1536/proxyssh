@@ -1,6 +1,7 @@
 package shell
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -9,27 +10,38 @@ import (
 
 	"github.com/creack/pty"
 	"github.com/pkg/errors"
+	"github.com/tkw1536/proxyssh"
 )
 
 // NewSystemProcess creates a new system process
-func NewSystemProcess(command string, args []string) (*SystemProcess, error) {
-	// exec.Command internally does use LookPath(), but doesn't return an error
-	// Instead we explicitly call LookPath() to intercept the error
-
-	exe, err := exec.LookPath(command)
-	if err != nil {
-		err = errors.Wrapf(err, "Can't find %s in path", command)
-		return nil, err
-	}
-
+func NewSystemProcess(command string, args []string) *SystemProcess {
 	return &SystemProcess{
-		Cmd: exec.Command(exe, args...),
-	}, nil
+		command: command,
+		args:    args,
+	}
 }
 
 // SystemProcess represents a process that is run using a the shell on the current machine
 type SystemProcess struct {
+	command string
+	args    []string
+
 	Cmd *exec.Cmd
+}
+
+// Init initializes this process
+func (sp *SystemProcess) Init(ctx context.Context, isPty bool) error {
+	// exec.Command internally does use LookPath(), but doesn't return an error
+	// Instead we explicitly call LookPath() to intercept the error
+
+	exe, err := exec.LookPath(sp.command)
+	if err != nil {
+		err = errors.Wrapf(err, "Can't find %s in path", sp.command)
+		return err
+	}
+
+	sp.Cmd = exec.Command(exe, sp.args...)
+	return nil
 }
 
 // String turns ShellProcess into a string
@@ -56,18 +68,34 @@ func (sp *SystemProcess) Stdin() (io.WriteCloser, error) {
 	return sp.Cmd.StdinPipe()
 }
 
-// Start starts the process
-func (sp *SystemProcess) Start() error {
-	return sp.Cmd.Start()
-}
+// Start starts this process
+func (sp *SystemProcess) Start(Term string, resizeChan <-chan proxyssh.WindowSize, isPty bool) (*os.File, error) {
+	// not a tty => start the process and be done!
+	if !isPty {
+		return nil, sp.Cmd.Start()
+	}
 
-// StartPty starts the process inside a pseudo tty
-func (sp *SystemProcess) StartPty(Term string) (*os.File, error) {
 	// add the terminal environment variable
 	sp.Cmd.Env = append(sp.Cmd.Env, fmt.Sprintf("TERM=%s", Term))
 
-	// and go!
-	return pty.Start(sp.Cmd)
+	// start the pty
+	f, err := pty.Start(sp.Cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	// start tracking window size
+	go func() {
+		for size := range resizeChan {
+			pty.Setsize(f, &pty.Winsize{
+				Rows: size.Height,
+				Cols: size.Width,
+			})
+		}
+	}()
+
+	// and return a function for this
+	return f, nil
 }
 
 // Wait waits for the process and returns the exit code
@@ -89,8 +117,8 @@ func (sp *SystemProcess) Wait() (code int, err error) {
 	return code, nil
 }
 
-// TryKill tries to kill the process
-func (sp *SystemProcess) TryKill() (success bool) {
+// Cleanup cleans up this process, typically killing it
+func (sp *SystemProcess) Cleanup() (killed bool) {
 	// no process => return
 	if sp.Cmd.Process == nil {
 		return true
