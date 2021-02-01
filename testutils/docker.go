@@ -64,6 +64,7 @@ func RunComposeTest(config string, files map[string]string, testcode ComposeTest
 		err = errors.Wrap(err, "Unable to create docker client")
 		panic(err)
 	}
+	cli.NegotiateAPIVersion(context.Background())
 	defer cli.Close()
 
 	// check that docker-compose exists

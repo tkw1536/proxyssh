@@ -92,6 +92,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -201,4 +202,5 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+	cli.NegotiateAPIVersion(context.Background())
 }
