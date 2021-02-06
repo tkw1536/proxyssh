@@ -79,7 +79,7 @@ type EngineProcess struct {
 	stdin          io.WriteCloser
 
 	// internal streams
-	stdoutTerm, stderrTerm, stdinTerm, ptyTerm *utils.Terminal
+	stdoutTerm, stderrTerm, stdinTerm, ptyTerm, ttyTerm *utils.Terminal
 
 	// state
 	execID string
@@ -142,8 +142,9 @@ func (ep *EngineProcess) initTerm() error {
 		return err
 	}
 
-	// store the pty for use in resizing
+	// store the pty and tty use
 	ep.ptyTerm = utils.GetTerminal(pty)
+	ep.ttyTerm = utils.GetTerminal(tty)
 
 	// standard output is the tty
 	ep.stdout = tty
@@ -314,6 +315,16 @@ func (ep *EngineProcess) Wait() (code int, err error) {
 
 // Cleanup cleans up this process, typically to kill it.
 func (ep *EngineProcess) Cleanup() (killed bool) {
+
+	if ep.ptyTerm != nil { // cleanup the pty
+		ep.ptyTerm.Close()
+		ep.ptyTerm = nil
+	}
+
+	if ep.ttyTerm != nil {
+		ep.ttyTerm.Close()
+		ep.ttyTerm = nil
+	}
 
 	if ep.conn != nil { // cleanup the connection
 		ep.conn.Close()
