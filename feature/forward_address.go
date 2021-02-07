@@ -1,4 +1,4 @@
-package utils
+package feature
 
 import (
 	"flag"
@@ -12,11 +12,11 @@ import (
 // NetworkAddress is a network address consisting of a hostname and a port
 type NetworkAddress struct {
 	Hostname string
-	Port     Port
+	Port     NetworkPort
 }
 
-// Port represents the Port of a NetworkAddress
-type Port uint16
+// NetworkPort represents the NetworkPort of a NetworkAddress
+type NetworkPort uint16
 
 // ParseNetworkAddress parses a network address of the form 'Hostname:Port'.
 // See function net.Dial, in particular the hostport for allowed combinations.
@@ -38,7 +38,7 @@ func ParseNetworkAddress(s string) (p NetworkAddress, err error) {
 		err = errors.Wrapf(err, "Unable to parse port: %s", err)
 		return
 	}
-	p.Port = Port(port)
+	p.Port = NetworkPort(port)
 
 	return p, nil
 }

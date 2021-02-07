@@ -7,19 +7,19 @@ import (
 
 	"github.com/gliderlabs/ssh"
 	"github.com/tkw1536/proxyssh"
+	"github.com/tkw1536/proxyssh/feature"
 	"github.com/tkw1536/proxyssh/testutils"
-	"github.com/tkw1536/proxyssh/utils"
 )
 
 var testServer *ssh.Server
 
 // make addresses for forward and reverse forwarding
 var (
-	forwardPortsAllow = utils.MustParseNetworkAddress(testutils.NewTestListenAddress())
-	forwardPortsDeny  = utils.MustParseNetworkAddress(testutils.NewTestListenAddress())
+	forwardPortsAllow = feature.MustParseNetworkAddress(testutils.NewTestListenAddress())
+	forwardPortsDeny  = feature.MustParseNetworkAddress(testutils.NewTestListenAddress())
 
-	reversePortsAllow = utils.MustParseNetworkAddress(testutils.NewTestListenAddress())
-	reversePortsDeny  = utils.MustParseNetworkAddress(testutils.NewTestListenAddress())
+	reversePortsAllow = feature.MustParseNetworkAddress(testutils.NewTestListenAddress())
+	reversePortsDeny  = feature.MustParseNetworkAddress(testutils.NewTestListenAddress())
 )
 
 func TestMain(m *testing.M) {
@@ -29,8 +29,8 @@ func TestMain(m *testing.M) {
 	testServer, err = proxyssh.NewServer(
 		testutils.GetTestLogger(),
 		&proxyssh.Options{
-			ForwardAddresses: []utils.NetworkAddress{forwardPortsAllow},
-			ReverseAddresses: []utils.NetworkAddress{reversePortsAllow},
+			ForwardAddresses: []feature.NetworkAddress{forwardPortsAllow},
+			ReverseAddresses: []feature.NetworkAddress{reversePortsAllow},
 		},
 		&SystemExecConfig{
 			Shell: "/bin/bash",

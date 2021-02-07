@@ -30,8 +30,8 @@ type Options struct {
 	// ReverseAddresses are addresses that reverse port forwarding is allowed for.
 	//
 	// See the AllowPortForwarding method for details.
-	ForwardAddresses []utils.NetworkAddress
-	ReverseAddresses []utils.NetworkAddress
+	ForwardAddresses []feature.NetworkAddress
+	ReverseAddresses []feature.NetworkAddress
 
 	// IdleTimeout is the timeout after which a connection is considered idle.
 	IdleTimeout time.Duration
@@ -75,15 +75,15 @@ func (opts *Options) RegisterFlags(flagset *flag.FlagSet, addUnsafeFlags bool) {
 	flagset.DurationVar(&opts.IdleTimeout, "timeout", opts.IdleTimeout, "Timeout to kill inactive connections after")
 
 	if opts.ForwardAddresses == nil {
-		opts.ForwardAddresses = []utils.NetworkAddress{}
+		opts.ForwardAddresses = []feature.NetworkAddress{}
 	}
-	fw := utils.NetworkAddressListVar{Addresses: &opts.ForwardAddresses}
+	fw := feature.NetworkAddressListVar{Addresses: &opts.ForwardAddresses}
 	flagset.Var(&fw, "L", "Ports to allow local forwarding for")
 
 	if opts.ReverseAddresses == nil {
-		opts.ReverseAddresses = []utils.NetworkAddress{}
+		opts.ReverseAddresses = []feature.NetworkAddress{}
 	}
-	bw := utils.NetworkAddressListVar{Addresses: &opts.ReverseAddresses}
+	bw := feature.NetworkAddressListVar{Addresses: &opts.ReverseAddresses}
 	flagset.Var(&bw, "R", "Ports to allow reverse forwarding for")
 
 	flagset.StringVar(&opts.HostKeyPath, "hostkey", opts.HostKeyPath, "Path hostkeys should be loaded from or created at")
