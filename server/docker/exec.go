@@ -45,10 +45,10 @@ import (
 //
 // See also https://www.apache.org/dev/crypto.html and/or seek legal counsel.
 
-// NewEngineProcess creates a process that executes within a docker container.
+// NewContainerExecProcess creates a process that executes within a docker container.
 //
-// The commnd will not prefix the entrypoint.
-func NewEngineProcess(client *client.Client, containerID string, command []string) *EngineProcess {
+// The command will not prefix the entrypoint.
+func NewContainerExecProcess(client *client.Client, containerID string, command []string) *ContainerExecProcess {
 	config := types.ExecConfig{
 		AttachStdin:  true,
 		AttachStderr: true,
@@ -56,7 +56,7 @@ func NewEngineProcess(client *client.Client, containerID string, command []strin
 		Cmd:          command,
 	}
 
-	return &EngineProcess{
+	return &ContainerExecProcess{
 		client: client,
 
 		containerID: containerID,
@@ -64,8 +64,8 @@ func NewEngineProcess(client *client.Client, containerID string, command []strin
 	}
 }
 
-// EngineProcess represents a process running inside a docker engine
-type EngineProcess struct {
+// ContainerExecProcess represents a process running inside a docker engine
+type ContainerExecProcess struct {
 	// environment
 	client *client.Client
 	ctx    context.Context
@@ -95,39 +95,39 @@ type EngineProcess struct {
 }
 
 // String turns EngineProcess into a string
-func (ep *EngineProcess) String() string {
-	if ep == nil {
+func (cep *ContainerExecProcess) String() string {
+	if cep == nil {
 		return ""
 	}
 
-	return ep.containerID + " " + strings.Join(ep.config.Cmd, " ")
+	return cep.containerID + " " + strings.Join(cep.config.Cmd, " ")
 }
 
 // Init initializes this EngineProcess
-func (ep *EngineProcess) Init(ctx context.Context, isTerm bool) error {
-	ep.ctx = ctx
+func (cep *ContainerExecProcess) Init(ctx context.Context, isTerm bool) error {
+	cep.ctx = ctx
 	if isTerm {
-		ep.config.Tty = true
-		return ep.initTerm()
+		cep.config.Tty = true
+		return cep.initTerm()
 	}
 
-	return ep.initPlain()
+	return cep.initPlain()
 }
 
-func (ep *EngineProcess) initPlain() error {
+func (cep *ContainerExecProcess) initPlain() error {
 	var err error
 
-	ep.stdout, ep.stdoutTerm, err = utils.NewWritePipe()
+	cep.stdout, cep.stdoutTerm, err = utils.NewWritePipe()
 	if err != nil {
 		return err
 	}
 
-	ep.stderr, ep.stderrTerm, err = utils.NewWritePipe()
+	cep.stderr, cep.stderrTerm, err = utils.NewWritePipe()
 	if err != nil {
 		return err
 	}
 
-	ep.stdinTerm, ep.stdin, err = utils.NewReadPipe()
+	cep.stdinTerm, cep.stdin, err = utils.NewReadPipe()
 	if err != nil {
 		return err
 	}
@@ -135,7 +135,7 @@ func (ep *EngineProcess) initPlain() error {
 	return nil
 }
 
-func (ep *EngineProcess) initTerm() error {
+func (cep *ContainerExecProcess) initTerm() error {
 	// create a new pty
 	pty, tty, err := pty.Open()
 	if err != nil {
@@ -143,46 +143,46 @@ func (ep *EngineProcess) initTerm() error {
 	}
 
 	// store the pty and tty use
-	ep.ptyTerm = utils.GetTerminal(pty)
-	ep.ttyTerm = utils.GetTerminal(tty)
+	cep.ptyTerm = utils.GetTerminal(pty)
+	cep.ttyTerm = utils.GetTerminal(tty)
 
 	// standard output is the tty
-	ep.stdout = tty
-	ep.stdoutTerm = utils.GetTerminal(tty)
+	cep.stdout = tty
+	cep.stdoutTerm = utils.GetTerminal(tty)
 
 	// standard input is the tty
-	ep.stdin = tty
-	ep.stdinTerm = utils.GetTerminal(tty)
+	cep.stdin = tty
+	cep.stdinTerm = utils.GetTerminal(tty)
 
 	return nil
 }
 
 // Stdout returns a pipe to Stdout
-func (ep *EngineProcess) Stdout() (io.ReadCloser, error) {
-	return ep.stdout, nil
+func (cep *ContainerExecProcess) Stdout() (io.ReadCloser, error) {
+	return cep.stdout, nil
 }
 
 // Stderr returns a pipe to Stderr
-func (ep *EngineProcess) Stderr() (io.ReadCloser, error) {
-	return ep.stderr, nil
+func (cep *ContainerExecProcess) Stderr() (io.ReadCloser, error) {
+	return cep.stderr, nil
 }
 
 // Stdin returns a pipe to Stdin
-func (ep *EngineProcess) Stdin() (io.WriteCloser, error) {
-	return ep.stdin, nil
+func (cep *ContainerExecProcess) Stdin() (io.WriteCloser, error) {
+	return cep.stdin, nil
 }
 
 // setRawTerminals sets all the terminals to raw mode
-func (ep *EngineProcess) setRawTerminals() error {
-	if err := ep.stdoutTerm.SetRawInput(); err != nil {
+func (cep *ContainerExecProcess) setRawTerminals() error {
+	if err := cep.stdoutTerm.SetRawInput(); err != nil {
 		return err
 	}
 
-	if err := ep.stderrTerm.SetRawInput(); err != nil {
+	if err := cep.stderrTerm.SetRawInput(); err != nil {
 		return err
 	}
 
-	if err := ep.stdoutTerm.SetRawOutput(); err != nil {
+	if err := cep.stdoutTerm.SetRawOutput(); err != nil {
 		return err
 	}
 
@@ -190,30 +190,30 @@ func (ep *EngineProcess) setRawTerminals() error {
 }
 
 // restoreTerminals restores all the terminal modes
-func (ep *EngineProcess) restoreTerminals() {
-	ep.restoreTerms.Do(func() {
-		ep.stdoutTerm.RestoreTerminal()
-		ep.stderrTerm.RestoreTerminal()
-		ep.stdinTerm.RestoreTerminal()
+func (cep *ContainerExecProcess) restoreTerminals() {
+	cep.restoreTerms.Do(func() {
+		cep.stdoutTerm.RestoreTerminal()
+		cep.stderrTerm.RestoreTerminal()
+		cep.stdinTerm.RestoreTerminal()
 
 		// this check has been adapted from upstream; for some reason they hang on specific platforms
-		if in := ep.stdinTerm.File(); in != nil && runtime.GOOS != "darwin" && runtime.GOOS != "windows" {
+		if in := cep.stdinTerm.File(); in != nil && runtime.GOOS != "darwin" && runtime.GOOS != "windows" {
 			in.Close()
 		}
 	})
 }
 
 // Start starts this process
-func (ep *EngineProcess) Start(Term string, resizeChan <-chan proxyssh.WindowSize, isPty bool) (*os.File, error) {
+func (cep *ContainerExecProcess) Start(Term string, resizeChan <-chan proxyssh.WindowSize, isPty bool) (*os.File, error) {
 	if isPty {
-		ep.config.Env = append(ep.config.Env, "TERM="+Term)
+		cep.config.Env = append(cep.config.Env, "TERM="+Term)
 
 		// start resizing the terminal
 		go func() {
 			for size := range resizeChan {
-				ep.ptyTerm.ResizeTo(size.Height, size.Width)
+				cep.ptyTerm.ResizeTo(size.Height, size.Width)
 
-				ep.client.ContainerExecResize(ep.ctx, ep.execID, types.ResizeOptions{
+				cep.client.ContainerExecResize(cep.ctx, cep.execID, types.ResizeOptions{
 					Height: uint(size.Height),
 					Width:  uint(size.Width),
 				})
@@ -222,114 +222,114 @@ func (ep *EngineProcess) Start(Term string, resizeChan <-chan proxyssh.WindowSiz
 	}
 
 	// start streaming
-	if err := ep.execAndStream(true); err != nil {
+	if err := cep.execAndStream(true); err != nil {
 		return nil, err
 	}
 
 	// and return
-	return ep.ptyTerm.File(), nil
+	return cep.ptyTerm.File(), nil
 }
 
-func (ep *EngineProcess) execAndStream(isPty bool) error {
+func (cep *ContainerExecProcess) execAndStream(isPty bool) error {
 
 	// set all the streams into raw mode
-	if err := ep.setRawTerminals(); err != nil {
+	if err := cep.setRawTerminals(); err != nil {
 		return err
 	}
 
 	// create the exec
-	res, err := ep.client.ContainerExecCreate(ep.ctx, ep.containerID, ep.config)
+	res, err := cep.client.ContainerExecCreate(cep.ctx, cep.containerID, cep.config)
 	if err != nil {
 		return err
 	}
-	ep.execID = res.ID
+	cep.execID = res.ID
 
 	// attach to it
-	conn, err := ep.client.ContainerExecAttach(ep.ctx, ep.execID, types.ExecStartCheck{
+	conn, err := cep.client.ContainerExecAttach(cep.ctx, cep.execID, types.ExecStartCheck{
 		Detach: false,
 		Tty:    isPty,
 	})
-	ep.conn = &conn
+	cep.conn = &conn
 
 	// setup channels
-	ep.outputErrChan = make(chan error)
-	ep.inputDoneChan = make(chan struct{})
+	cep.outputErrChan = make(chan error)
+	cep.inputDoneChan = make(chan struct{})
 
 	// read output
 	go func() {
 		if isPty {
-			_, err = io.Copy(ep.stdoutTerm.File(), conn.Reader)
-			ep.restoreTerminals()
+			_, err = io.Copy(cep.stdoutTerm.File(), conn.Reader)
+			cep.restoreTerminals()
 		} else {
-			_, err = stdcopy.StdCopy(ep.stdoutTerm.File(), ep.stderrTerm.File(), conn.Reader)
+			_, err = stdcopy.StdCopy(cep.stdoutTerm.File(), cep.stderrTerm.File(), conn.Reader)
 		}
 
 		// close output and send error (if any)
-		ep.outputErrChan <- err
+		cep.outputErrChan <- err
 	}()
 
 	// write input
 	go func() {
-		io.Copy(conn.Conn, ep.stdinTerm.File())
+		io.Copy(conn.Conn, cep.stdinTerm.File())
 		conn.CloseWrite()
-		close(ep.inputDoneChan)
+		close(cep.inputDoneChan)
 	}()
 
 	return nil
 }
 
 // waitStreams waits for the streams to finish
-func (ep *EngineProcess) waitStreams() error {
-	defer ep.restoreTerminals()
+func (cep *ContainerExecProcess) waitStreams() error {
+	defer cep.restoreTerminals()
 
 	select {
-	case err := <-ep.outputErrChan:
+	case err := <-cep.outputErrChan:
 		return err
-	case <-ep.inputDoneChan: // wait for output also
+	case <-cep.inputDoneChan: // wait for output also
 		select {
-		case err := <-ep.outputErrChan:
+		case err := <-cep.outputErrChan:
 			return err
-		case <-ep.ctx.Done():
-			return ep.ctx.Err()
+		case <-cep.ctx.Done():
+			return cep.ctx.Err()
 		}
-	case <-ep.ctx.Done():
-		return ep.ctx.Err()
+	case <-cep.ctx.Done():
+		return cep.ctx.Err()
 	}
 }
 
 // Wait waits for the process and returns the exit code
-func (ep *EngineProcess) Wait() (code int, err error) {
+func (cep *ContainerExecProcess) Wait() (code int, err error) {
 
 	// wait for the streams to close
-	if err := ep.waitStreams(); err != nil {
+	if err := cep.waitStreams(); err != nil {
 		return 0, err
 	}
 
 	// inspect and get the actual exit code
-	resp, err := ep.client.ContainerExecInspect(ep.ctx, ep.execID)
+	resp, err := cep.client.ContainerExecInspect(cep.ctx, cep.execID)
 	if err == nil {
-		ep.exited = true
+		cep.exited = true
 	}
 	return resp.ExitCode, err
 }
 
 // Cleanup cleans up this process, typically to kill it.
-func (ep *EngineProcess) Cleanup() (killed bool) {
+func (cep *ContainerExecProcess) Cleanup() (killed bool) {
 
-	if ep.ptyTerm != nil { // cleanup the pty
-		ep.ptyTerm.Close()
-		ep.ptyTerm = nil
+	if cep.ptyTerm != nil { // cleanup the pty
+		cep.ptyTerm.Close()
+		cep.ptyTerm = nil
 	}
 
-	if ep.ttyTerm != nil {
-		ep.ttyTerm.Close()
-		ep.ttyTerm = nil
+	if cep.ttyTerm != nil {
+		cep.ttyTerm.Close()
+		cep.ttyTerm = nil
 	}
 
-	if ep.conn != nil { // cleanup the connection
-		ep.conn.Close()
-		ep.conn = nil
+	if cep.conn != nil { // cleanup the connection
+		cep.conn.Close()
+		cep.conn = nil
 	}
 
-	return ep.exited // return if we exited
+	return cep.exited // return if we exited
 }

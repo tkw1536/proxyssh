@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/gliderlabs/ssh"
+	"github.com/tkw1536/proxyssh/server"
 	"github.com/tkw1536/proxyssh/testutils"
 	"github.com/tkw1536/proxyssh/utils"
 )
@@ -23,15 +24,22 @@ var (
 
 func TestMain(m *testing.M) {
 
-	// create a new server and start listening
-	testServer = NewProxySSHServer(
+	// make a new server
+	var err error
+	testServer, err = server.NewServer(
 		testutils.GetTestLogger(),
-		Options{
-			Shell:            "/bin/bash",
+		server.Options{
 			ForwardAddresses: []utils.NetworkAddress{forwardPortsAllow},
 			ReverseAddresses: []utils.NetworkAddress{reversePortsAllow},
 		},
+		&SystemExecConfig{
+			Shell: "/bin/bash",
+		},
 	)
+	if err != nil {
+		panic(err)
+	}
+
 	// start listening and then serving
 	addr := testutils.NewTestListenAddress()
 	testListener, err := net.Listen("tcp", addr)

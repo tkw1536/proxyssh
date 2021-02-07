@@ -52,31 +52,26 @@ import (
 	"github.com/tkw1536/proxyssh/legal"
 	"github.com/tkw1536/proxyssh/server"
 	"github.com/tkw1536/proxyssh/server/forwarder"
-	"github.com/tkw1536/proxyssh/server/shell"
 	"github.com/tkw1536/proxyssh/utils"
 )
 
 var logger = log.New(os.Stderr, "", log.LstdFlags)
 
 func main() {
-	// init
-	sshserver := forwarder.NewForwardingSSHServer(logger, shell.Options{
+	sshserver, err := server.NewServer(logger, server.Options{
 		ListenAddress: listenAddress,
-
-		IdleTimeout: idleTimeout,
+		IdleTimeout:   idleTimeout,
 
 		ForwardAddresses: forwardPorts,
 		ReverseAddresses: reversePorts,
-	})
 
-	// load host keys
-	err := server.UseOrMakeHostKey(logger, sshserver, hostKeyPath+"_rsa", server.RSAAlgorithm)
+		DisableAuthentication: true,
+
+		HostKeyPath: hostKeyPath,
+	}, forwarder.EmptyConfiguration{})
+
 	if err != nil {
-		logger.Fatal(err)
-	}
-	err = server.UseOrMakeHostKey(logger, sshserver, hostKeyPath+"_ed25519", server.ED25519Algorithm)
-	if err != nil {
-		logger.Fatal(err)
+		logger.Fatalf("Failed to initialize server: %s", err)
 	}
 
 	// and run

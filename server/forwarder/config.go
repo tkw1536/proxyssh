@@ -1,35 +1,33 @@
-// Package forwarder implements an ssh server that only allows forwards, but no shell command
+// Package forwarder provides EmptyConfiguration.
 package forwarder
 
 import (
 	"io"
 
 	"github.com/gliderlabs/ssh"
-	"github.com/tkw1536/proxyssh/server"
-	"github.com/tkw1536/proxyssh/server/shell"
 	"github.com/tkw1536/proxyssh/utils"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
-// NewForwardingSSHServer makes a new Server that has port forwarding enabled, but no shell access.
-//
-// It uses the provided options, and returns the new server that was created.
-// The 'shell' argument from options is ignored.
-// It returns the new server that was created.
-func NewForwardingSSHServer(logger utils.Logger, opts shell.Options) (sshserver *ssh.Server) {
-	sshserver = &ssh.Server{
-		Handler: HandleNoCommand(logger),
-
-		Addr:        opts.ListenAddress,
-		IdleTimeout: opts.IdleTimeout,
-	}
-	server.AllowPortForwarding(logger, sshserver, opts.ForwardAddresses, opts.ReverseAddresses)
-
-	return
+// EmptyConfiguration implements a configuration that does not provide any shell access.
+type EmptyConfiguration struct {
 }
 
-// HandleNoCommand creates an ssh.Handler that provides a no-op handler for a shell session.
-func HandleNoCommand(logger utils.Logger) ssh.Handler {
+// Apply applies this configuration to a server.
+// This is a no-op.
+func (EmptyConfiguration) Apply(logger utils.Logger, sshserver *ssh.Server) error {
+	sshserver.Handler = handleNoCommand(logger)
+	return nil
+}
+
+// Handle handles a new server process.
+// TODO: this should be implemented in the futture
+//func (cfg *EmptyConfiguration) Handle(logger utils.Logger, session ssh.Session) (proxyssh.Process, error) {
+//	panic("not yet implemented")
+//}
+
+// handleNoCommand creates an ssh.Handler that provides a no-op handler for a shell session.
+func handleNoCommand(logger utils.Logger) ssh.Handler {
 	return func(session ssh.Session) {
 		// logging
 		utils.FmtSSHLog(logger, session, "session_start %s", session.User())

@@ -81,26 +81,23 @@ import (
 var logger = log.New(os.Stderr, "", log.LstdFlags)
 
 func main() {
-	// init
-	sshserver := shell.NewProxySSHServer(logger, shell.Options{
-		ListenAddress:    listenAddress,
-		IdleTimeout:      idleTimeout,
-		Shell:            shellPath,
+
+	sshserver, err := server.NewServer(logger, server.Options{
+		ListenAddress: listenAddress,
+		IdleTimeout:   idleTimeout,
+
 		ForwardAddresses: forwardPorts,
 		ReverseAddresses: reversePorts,
+
+		HostKeyPath: hostKeyPath,
+	}, &shell.SystemExecConfig{
+		Shell: shellPath,
 	})
 
-	// load host keys
-	err := server.UseOrMakeHostKey(logger, sshserver, hostKeyPath+"_rsa", server.RSAAlgorithm)
 	if err != nil {
-		logger.Fatal(err)
-	}
-	err = server.UseOrMakeHostKey(logger, sshserver, hostKeyPath+"_ed25519", server.ED25519Algorithm)
-	if err != nil {
-		logger.Fatal(err)
+		logger.Fatalf("Failed to initialize server: %s", err)
 	}
 
-	// and run
 	logger.Printf("Listening on %s", listenAddress)
 	logger.Fatal(sshserver.ListenAndServe())
 }

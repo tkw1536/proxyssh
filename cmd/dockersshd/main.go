@@ -110,36 +110,29 @@ import (
 var logger = log.New(os.Stderr, "", log.LstdFlags)
 
 func main() {
-	// init
-	sshserver := docker.NewProxy(logger, docker.Options{
-		Client: cli,
-
+	sshserver, err := server.NewServer(logger, server.Options{
 		ListenAddress: listenAddress,
+		IdleTimeout:   idleTimeout,
+
+		ForwardAddresses: forwardAddresses,
+		ReverseAddresses: reverseAddresses,
+
+		DisableAuthentication: disableAuthentication,
+
+		HostKeyPath: hostKeyPath,
+	}, &docker.ContainerExecConfig{
+		Client: cli,
 
 		DockerLabelUser:     dockerLabelUser,
 		DockerLabelAuthFile: dockerLabelAuthFile,
 
 		ContainerShell: containerShell,
-
-		DisableAuthentication: disableAuthentication,
-
-		IdleTimeout: idleTimeout,
-
-		ForwardAddresses: forwardAddresses,
-		ReverseAddresses: reverseAddresses,
 	})
 
-	// load host keys
-	err := server.UseOrMakeHostKey(logger, sshserver, hostKeyPath+"_rsa", server.RSAAlgorithm)
 	if err != nil {
-		logger.Fatal(err)
-	}
-	err = server.UseOrMakeHostKey(logger, sshserver, hostKeyPath+"_ed25519", server.ED25519Algorithm)
-	if err != nil {
-		logger.Fatal(err)
+		logger.Fatalf("Failed to initialize server: %s", err)
 	}
 
-	// and run
 	logger.Printf("Listening on %s", listenAddress)
 	logger.Fatal(sshserver.ListenAndServe())
 }

@@ -16,6 +16,24 @@ import (
 	gossh "golang.org/x/crypto/ssh"
 )
 
+// UseOrMakeHostKeys is like UseOrMakeHostKey except that it accepts multiple HostKeyAlgorithms.
+// For each key algorithm, the privateKeyPath is appended with "_" + the name of the algorithm in question.
+//
+// When algorithms is nil, picks a reasonable set of default algorithms.
+func UseOrMakeHostKeys(logger utils.Logger, server *ssh.Server, privateKeyPath string, algorithms []HostKeyAlgorithm) error {
+	if algorithms == nil {
+		algorithms = []HostKeyAlgorithm{RSAAlgorithm, ED25519Algorithm}
+	}
+
+	for _, algorithm := range algorithms {
+		path := privateKeyPath + "_" + string(algorithm)
+		if err := UseOrMakeHostKey(logger, server, path, algorithm); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // UseOrMakeHostKey attempts to load a host key from the given privateKeyPath.
 // If the path does not exist, a new host key is generated.
 // It then adds this hostkey to the priovided server.
