@@ -1,4 +1,5 @@
-package utils
+// Package logging provides Logger.
+package logging
 
 import (
 	"fmt"
@@ -31,9 +32,8 @@ type Logger interface {
 	Printf(format string, v ...interface{})
 }
 
-func init() {
-	var _ Logger = (*log.Logger)(nil)
-}
+// log.Logger fullfills Logger
+var _ Logger = (*log.Logger)(nil)
 
 // FmtSSHLog formats a log message, prefixes it with information about s, and then prints it to Logger.
 //

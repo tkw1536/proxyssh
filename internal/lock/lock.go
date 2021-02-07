@@ -1,4 +1,5 @@
-package utils
+// Package lock provides OneTime
+package lock
 
 import (
 	"sync/atomic"

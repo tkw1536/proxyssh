@@ -7,7 +7,7 @@ import (
 
 	"github.com/gliderlabs/ssh"
 	"github.com/tkw1536/proxyssh"
-	"github.com/tkw1536/proxyssh/internal/utils"
+	"github.com/tkw1536/proxyssh/internal/logging"
 )
 
 // SystemExecConfig implements a proxyssh.Configuration and proxyssh.Handler that execute user processes using the real system.
@@ -20,12 +20,12 @@ type SystemExecConfig struct {
 
 // Apply applies this configuration to the server.
 // This is a no-op.
-func (cfg *SystemExecConfig) Apply(logger utils.Logger, sshserver *ssh.Server) error {
+func (cfg *SystemExecConfig) Apply(logger logging.Logger, sshserver *ssh.Server) error {
 	return nil
 }
 
 // Handle handles a new configuration thingy
-func (cfg *SystemExecConfig) Handle(logger utils.Logger, session ssh.Session) (proxyssh.Process, error) {
+func (cfg *SystemExecConfig) Handle(logger logging.Logger, session ssh.Session) (proxyssh.Process, error) {
 	userCommand := session.Command()
 
 	// determine the arguments to pass to the shell.

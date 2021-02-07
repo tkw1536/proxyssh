@@ -8,6 +8,7 @@ import (
 
 	"github.com/gliderlabs/ssh"
 	"github.com/tkw1536/proxyssh/feature"
+	"github.com/tkw1536/proxyssh/internal/logging"
 	"github.com/tkw1536/proxyssh/internal/testutils"
 	gossh "golang.org/x/crypto/ssh"
 )
@@ -27,7 +28,7 @@ func TestReadOrMakeHostKey(t *testing.T) {
 			defer cleanup()
 
 			// test actual: try to load the key
-			signer, err := feature.ReadOrMakeHostKey(testutils.GetTestLogger(), tmpFile, tt.algorithm)
+			signer, err := feature.ReadOrMakeHostKey(logging.GetTestLogger(), tmpFile, tt.algorithm)
 			if err != nil {
 				t.Errorf("ReadOrMakeHostKey() error = %v, wantError = nil", err)
 			}
@@ -47,7 +48,7 @@ func TestReadOrMakeHostKey(t *testing.T) {
 			cleanup()
 
 			// test actual: ReadOrMakeHostKey should make a new file
-			signer, err := feature.ReadOrMakeHostKey(testutils.GetTestLogger(), tmpFile, tt.algorithm)
+			signer, err := feature.ReadOrMakeHostKey(logging.GetTestLogger(), tmpFile, tt.algorithm)
 			if err != nil {
 				t.Errorf("ReadOrMakeHostKey() error = %v, wantError = nil", err)
 			}
@@ -66,7 +67,7 @@ func TestReadOrMakeHostKey(t *testing.T) {
 			defer cleanup()
 
 			// test actual: ReadOrMakeHostKey should error
-			signer, err := feature.ReadOrMakeHostKey(testutils.GetTestLogger(), tmpFile, tt.algorithm)
+			signer, err := feature.ReadOrMakeHostKey(logging.GetTestLogger(), tmpFile, tt.algorithm)
 			if err == nil {
 				t.Errorf("ReadOrMakeHostKey() error = %v, wantError != nil", err)
 			}
@@ -143,7 +144,7 @@ func TestUseOrMakeHostKey(t *testing.T) {
 			tmpFile, cleanup := testutils.WriteTempFile("privkey.pem", tt.privateKey)
 			defer cleanup()
 
-			err := feature.UseOrMakeHostKey(testutils.GetTestLogger(), testServer, tmpFile, tt.algorithm)
+			err := feature.UseOrMakeHostKey(logging.GetTestLogger(), testServer, tmpFile, tt.algorithm)
 			if err != nil {
 				t.Errorf("UseOrMakeHostKey() error = %v, wantError = nil", err)
 				t.FailNow()

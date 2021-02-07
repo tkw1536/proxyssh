@@ -6,7 +6,7 @@ import (
 
 	"github.com/gliderlabs/ssh"
 	"github.com/tkw1536/proxyssh/feature"
-	"github.com/tkw1536/proxyssh/internal/utils"
+	"github.com/tkw1536/proxyssh/internal/logging"
 )
 
 // Options are options that implement features shared by several server implementations.
@@ -38,7 +38,7 @@ type Options struct {
 }
 
 // Apply applies the common options to server.
-func (opts *Options) Apply(logger utils.Logger, sshserver *ssh.Server) error {
+func (opts *Options) Apply(logger logging.Logger, sshserver *ssh.Server) error {
 	// store address and idle timeout
 	sshserver.Addr = opts.ListenAddress
 	sshserver.IdleTimeout = opts.IdleTimeout

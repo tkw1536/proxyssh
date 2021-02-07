@@ -13,7 +13,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/tkw1536/proxyssh"
-	"github.com/tkw1536/proxyssh/internal/utils"
+	"github.com/tkw1536/proxyssh/internal/term"
 )
 
 // Code is this file is roughly adapted from https://github.com/docker/cli/blob/master/cli/command/container/exec.go
@@ -79,7 +79,7 @@ type ContainerExecProcess struct {
 	stdin          io.WriteCloser
 
 	// internal streams
-	stdoutTerm, stderrTerm, stdinTerm, ptyTerm, ttyTerm *utils.Terminal
+	stdoutTerm, stderrTerm, stdinTerm, ptyTerm, ttyTerm *term.Terminal
 
 	// state
 	execID string
@@ -117,17 +117,17 @@ func (cep *ContainerExecProcess) Init(ctx context.Context, isTerm bool) error {
 func (cep *ContainerExecProcess) initPlain() error {
 	var err error
 
-	cep.stdout, cep.stdoutTerm, err = utils.NewWritePipe()
+	cep.stdout, cep.stdoutTerm, err = term.NewWritePipe()
 	if err != nil {
 		return err
 	}
 
-	cep.stderr, cep.stderrTerm, err = utils.NewWritePipe()
+	cep.stderr, cep.stderrTerm, err = term.NewWritePipe()
 	if err != nil {
 		return err
 	}
 
-	cep.stdinTerm, cep.stdin, err = utils.NewReadPipe()
+	cep.stdinTerm, cep.stdin, err = term.NewReadPipe()
 	if err != nil {
 		return err
 	}
@@ -143,16 +143,16 @@ func (cep *ContainerExecProcess) initTerm() error {
 	}
 
 	// store the pty and tty use
-	cep.ptyTerm = utils.GetTerminal(pty)
-	cep.ttyTerm = utils.GetTerminal(tty)
+	cep.ptyTerm = term.GetTerminal(pty)
+	cep.ttyTerm = term.GetTerminal(tty)
 
 	// standard output is the tty
 	cep.stdout = tty
-	cep.stdoutTerm = utils.GetTerminal(tty)
+	cep.stdoutTerm = term.GetTerminal(tty)
 
 	// standard input is the tty
 	cep.stdin = tty
-	cep.stdinTerm = utils.GetTerminal(tty)
+	cep.stdinTerm = term.GetTerminal(tty)
 
 	return nil
 }

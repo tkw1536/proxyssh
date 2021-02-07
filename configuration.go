@@ -2,16 +2,16 @@ package proxyssh
 
 import (
 	"github.com/gliderlabs/ssh"
-	"github.com/tkw1536/proxyssh/internal/utils"
+	"github.com/tkw1536/proxyssh/internal/logging"
 )
 
 // Configuration is a configuration for an ssh.Server.
 type Configuration interface {
-	Apply(logger utils.Logger, server *ssh.Server) error
+	Apply(logger logging.Logger, server *ssh.Server) error
 }
 
 // NewServer makes a new server, applies the appropriate configurations, and then applies the options.
-func NewServer(logger utils.Logger, options *Options, configurations ...Configuration) (*ssh.Server, error) {
+func NewServer(logger logging.Logger, options *Options, configurations ...Configuration) (*ssh.Server, error) {
 	server := &ssh.Server{}
 
 	for _, config := range configurations {
@@ -35,7 +35,7 @@ func NewServer(logger utils.Logger, options *Options, configurations ...Configur
 // When Configuration implements Handler, additionally calls ApplyHandler().
 //
 // When a configuration is nil, ApplyConfiguration does nothing.
-func ApplyConfiguration(logger utils.Logger, server *ssh.Server, configuration Configuration) error {
+func ApplyConfiguration(logger logging.Logger, server *ssh.Server, configuration Configuration) error {
 
 	if configuration == nil {
 		return nil

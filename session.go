@@ -8,19 +8,20 @@ import (
 
 	"github.com/gliderlabs/ssh"
 	"github.com/pkg/errors"
-	"github.com/tkw1536/proxyssh/internal/utils"
+	"github.com/tkw1536/proxyssh/internal/lock"
+	"github.com/tkw1536/proxyssh/internal/logging"
 )
 
 // Session represents an ongoing ssh.Session executing a Process
 type Session struct {
-	ssh.Session              // the underlying ssh.session
-	Logger      utils.Logger // for logging
+	ssh.Session                // the underlying ssh.session
+	Logger      logging.Logger // for logging
 
 	Process Process // the process that this session should execute
 
 	// for finalization
-	started  utils.OneTime
-	finished utils.OneTime
+	started  lock.OneTime
+	finished lock.OneTime
 }
 
 // Process represents a runnable object with input and output streams.
@@ -214,5 +215,5 @@ func (c *Session) killProcess() {
 
 // fmtLog is like FmtSSHLog, but for this session
 func (c *Session) fmtLog(message string, args ...interface{}) {
-	utils.FmtSSHLog(c.Logger, c, message, args...)
+	logging.FmtSSHLog(c.Logger, c, message, args...)
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/gliderlabs/ssh"
 	"github.com/tkw1536/proxyssh"
 	"github.com/tkw1536/proxyssh/feature"
+	"github.com/tkw1536/proxyssh/internal/logging"
 	"github.com/tkw1536/proxyssh/internal/testutils"
 )
 
@@ -27,7 +28,7 @@ func TestMain(m *testing.M) {
 	// make a new server
 	var err error
 	testServer, err = proxyssh.NewServer(
-		testutils.GetTestLogger(),
+		logging.GetTestLogger(),
 		&proxyssh.Options{
 			ForwardAddresses: []feature.NetworkAddress{forwardPortsAllow},
 			ReverseAddresses: []feature.NetworkAddress{reversePortsAllow},

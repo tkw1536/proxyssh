@@ -2,13 +2,13 @@ package feature
 
 import (
 	"github.com/gliderlabs/ssh"
-	"github.com/tkw1536/proxyssh/internal/utils"
+	"github.com/tkw1536/proxyssh/internal/logging"
 )
 
 // AllowForwardTo returns a ssh.LocalPortForwardingCallback that allows forwarding traffic to the provided addresses only.
 //
 // logger is called whenever a request from a caller is allowed or denied.
-func AllowForwardTo(logger utils.Logger, addresses []NetworkAddress) ssh.LocalPortForwardingCallback {
+func AllowForwardTo(logger logging.Logger, addresses []NetworkAddress) ssh.LocalPortForwardingCallback {
 	if len(addresses) > 0 {
 		logger.Printf("allow_forward_to %v", addresses)
 	}
@@ -20,7 +20,7 @@ func AllowForwardTo(logger utils.Logger, addresses []NetworkAddress) ssh.LocalPo
 // AllowForwardFrom returns a ssh.ReversePortForwardingCallback that allows reading traffic to the provided addresses only.
 //
 // logger is called whenever a request from a caller is allowed or denied.
-func AllowForwardFrom(logger utils.Logger, addresses []NetworkAddress) ssh.ReversePortForwardingCallback {
+func AllowForwardFrom(logger logging.Logger, addresses []NetworkAddress) ssh.ReversePortForwardingCallback {
 	if len(addresses) > 0 {
 		logger.Printf("allow_forward_from %v", addresses)
 	}
@@ -30,14 +30,14 @@ func AllowForwardFrom(logger utils.Logger, addresses []NetworkAddress) ssh.Rever
 }
 
 // filterInternal is the internal function used by AllowForwardPorts and AllowReversePorts
-func filterInternal(logger utils.Logger, logExtra string, ctx ssh.Context, addresses []NetworkAddress, actualAddress NetworkAddress) bool {
+func filterInternal(logger logging.Logger, logExtra string, ctx ssh.Context, addresses []NetworkAddress, actualAddress NetworkAddress) bool {
 	for _, p := range addresses {
 		if p.Hostname == actualAddress.Hostname && p.Port == actualAddress.Port {
-			utils.FmtSSHLog(logger, ctx, "grant%s_portforward %s", logExtra, actualAddress.String())
+			logging.FmtSSHLog(logger, ctx, "grant%s_portforward %s", logExtra, actualAddress.String())
 			return true
 		}
 	}
-	utils.FmtSSHLog(logger, ctx, "deny%s_portforward %s", logExtra, actualAddress.String())
+	logging.FmtSSHLog(logger, ctx, "deny%s_portforward %s", logExtra, actualAddress.String())
 	return false
 }
 
@@ -46,7 +46,7 @@ func filterInternal(logger utils.Logger, logExtra string, ctx ssh.Context, addre
 //
 // See also AllowForwardTo, AllowForwardFrom and EnablePortForwarding.
 //
-func AllowPortForwarding(logger utils.Logger, server *ssh.Server, toAddresses []NetworkAddress, fromAddresses []NetworkAddress) {
+func AllowPortForwarding(logger logging.Logger, server *ssh.Server, toAddresses []NetworkAddress, fromAddresses []NetworkAddress) {
 	EnablePortForwarding(server, AllowForwardTo(logger, toAddresses), AllowForwardFrom(logger, fromAddresses))
 }
 

@@ -12,7 +12,7 @@ import (
 
 	"github.com/gliderlabs/ssh"
 	"github.com/pkg/errors"
-	"github.com/tkw1536/proxyssh/internal/utils"
+	"github.com/tkw1536/proxyssh/internal/logging"
 	gossh "golang.org/x/crypto/ssh"
 )
 
@@ -20,7 +20,7 @@ import (
 // For each key algorithm, the privateKeyPath is appended with "_" + the name of the algorithm in question.
 //
 // When algorithms is nil, picks a reasonable set of default algorithms.
-func UseOrMakeHostKeys(logger utils.Logger, server *ssh.Server, privateKeyPath string, algorithms []HostKeyAlgorithm) error {
+func UseOrMakeHostKeys(logger logging.Logger, server *ssh.Server, privateKeyPath string, algorithms []HostKeyAlgorithm) error {
 	if algorithms == nil {
 		algorithms = []HostKeyAlgorithm{RSAAlgorithm, ED25519Algorithm}
 	}
@@ -42,7 +42,7 @@ func UseOrMakeHostKeys(logger utils.Logger, server *ssh.Server, privateKeyPath s
 // Please see the appropriate documentation for that function.
 //
 // logger is called whenever a new host key algorithm is being generated.
-func UseOrMakeHostKey(logger utils.Logger, server *ssh.Server, privateKeyPath string, algorithm HostKeyAlgorithm) error {
+func UseOrMakeHostKey(logger logging.Logger, server *ssh.Server, privateKeyPath string, algorithm HostKeyAlgorithm) error {
 	key, err := ReadOrMakeHostKey(logger, privateKeyPath, algorithm)
 	if err != nil {
 		return err
@@ -60,7 +60,7 @@ func UseOrMakeHostKey(logger utils.Logger, server *ssh.Server, privateKeyPath st
 // It makes no attempt at verifiying this; the key mail fail to load and return an error, or it may load incorrect data.
 //
 // logger is called whenever a new host key algorithm is being generated.
-func ReadOrMakeHostKey(logger utils.Logger, privateKeyPath string, algorithm HostKeyAlgorithm) (key gossh.Signer, err error) {
+func ReadOrMakeHostKey(logger logging.Logger, privateKeyPath string, algorithm HostKeyAlgorithm) (key gossh.Signer, err error) {
 	hostKey := NewHostKey(algorithm)
 
 	if _, e := os.Stat(privateKeyPath); os.IsNotExist(e) { // path doesn't exist => generate a new key there!
@@ -78,7 +78,7 @@ func ReadOrMakeHostKey(logger utils.Logger, privateKeyPath string, algorithm Hos
 }
 
 // loadHostKey loadsa host key
-func loadHostKey(logger utils.Logger, key HostKey, path string) (err error) {
+func loadHostKey(logger logging.Logger, key HostKey, path string) (err error) {
 	logger.Printf("load_hostkey %s %s", key.Algorithm(), path)
 
 	// read all the bytes from the file
@@ -104,7 +104,7 @@ func loadHostKey(logger utils.Logger, key HostKey, path string) (err error) {
 }
 
 // makeHostKey makes a new host key
-func makeHostKey(logger utils.Logger, key HostKey, path string) error {
+func makeHostKey(logger logging.Logger, key HostKey, path string) error {
 	logger.Printf("generate_hostkey %s %s", key.Algorithm(), path)
 
 	if err := key.Generate(0, nil); err != nil {

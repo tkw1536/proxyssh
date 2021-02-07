@@ -1,6 +1,6 @@
 // Package testutils contains various functions to be used by the tests of the proxyssh package.
 // It is not intended to be used publicly, and no versioning guarantees apply.
-package testutils
+package logging
 
 import (
 	"log"

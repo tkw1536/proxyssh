@@ -1,4 +1,5 @@
-package utils
+// Package term provides Terminal.
+package term
 
 import (
 	"os"

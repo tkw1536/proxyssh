@@ -9,7 +9,7 @@ import (
 	"github.com/gliderlabs/ssh"
 	"github.com/tkw1536/proxyssh"
 	"github.com/tkw1536/proxyssh/feature"
-	"github.com/tkw1536/proxyssh/internal/utils"
+	"github.com/tkw1536/proxyssh/internal/logging"
 )
 
 // ContainerExecConfig implements a proxyssh.Configuration and proxyssh.Handler that execute user processes within running docker containers.
@@ -65,7 +65,7 @@ type ContainerExecConfig struct {
 // But I am not sure how to avoid this.
 
 // Apply applies this configuration to the server.
-func (cfg *ContainerExecConfig) Apply(logger utils.Logger, sshserver *ssh.Server) error {
+func (cfg *ContainerExecConfig) Apply(logger logging.Logger, sshserver *ssh.Server) error {
 	sshserver.PublicKeyHandler = feature.AuthorizeKeys(logger, func(ctx ssh.Context) ([]ssh.PublicKey, error) {
 		// find the (unique) associated container
 		container, err := FindUniqueContainer(cfg.Client, cfg.DockerLabelUser, ctx.User())
@@ -84,7 +84,7 @@ func (cfg *ContainerExecConfig) Apply(logger utils.Logger, sshserver *ssh.Server
 }
 
 // Handle implements the handler
-func (cfg *ContainerExecConfig) Handle(logger utils.Logger, session ssh.Session) (proxyssh.Process, error) {
+func (cfg *ContainerExecConfig) Handle(logger logging.Logger, session ssh.Session) (proxyssh.Process, error) {
 	userCommand := session.Command()
 
 	// determine the command to run inside the docker container
