@@ -9,6 +9,9 @@ import (
 //
 // logger is called whenever a request from a caller is allowed or denied.
 func AllowForwardTo(logger utils.Logger, addresses []utils.NetworkAddress) ssh.LocalPortForwardingCallback {
+	if len(addresses) > 0 {
+		logger.Printf("allow_forward_to %v", addresses)
+	}
 	return func(ctx ssh.Context, dhost string, dport uint32) bool {
 		return filterInternal(logger, "", ctx, addresses, utils.NetworkAddress{Hostname: dhost, Port: utils.Port(dport)})
 	}
@@ -18,6 +21,9 @@ func AllowForwardTo(logger utils.Logger, addresses []utils.NetworkAddress) ssh.L
 //
 // logger is called whenever a request from a caller is allowed or denied.
 func AllowForwardFrom(logger utils.Logger, addresses []utils.NetworkAddress) ssh.ReversePortForwardingCallback {
+	if len(addresses) > 0 {
+		logger.Printf("allow_forward_from %v", addresses)
+	}
 	return func(ctx ssh.Context, bindHost string, bindPort uint32) bool {
 		return filterInternal(logger, "_reverse", ctx, addresses, utils.NetworkAddress{Hostname: bindHost, Port: utils.Port(bindPort)})
 	}
