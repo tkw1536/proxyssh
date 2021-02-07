@@ -49,9 +49,8 @@ import (
 	"time"
 
 	"github.com/tkw1536/proxyssh"
+	"github.com/tkw1536/proxyssh/config/terminal"
 	"github.com/tkw1536/proxyssh/legal"
-	"github.com/tkw1536/proxyssh/server"
-	"github.com/tkw1536/proxyssh/server/forwarder"
 )
 
 var logger = log.New(os.Stderr, "", log.LstdFlags)
@@ -72,7 +71,7 @@ func main() {
 	logger.Fatal(sshserver.ListenAndServe())
 }
 
-var options = &server.Options{
+var options = &proxyssh.Options{
 	ListenAddress: ":2222",
 	IdleTimeout:   12 * time.Hour,
 
@@ -84,11 +83,12 @@ var options = &server.Options{
 	HostKeyPath: "hostkey.pem",
 }
 
-var config = &forwarder.EmptyConfiguration{}
+var config = &terminal.EmptyConfiguration{}
 
 func init() {
 	defer flag.Parse()
 
 	legal.RegisterFlag(nil)
 	options.RegisterFlags(nil, false)
+	config.RegisterFlags(nil)
 }

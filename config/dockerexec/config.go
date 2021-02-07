@@ -1,17 +1,18 @@
-// Package docker provides ExecConfiguration.
-package docker
+// Package dockerexec provides ContainerExecConfig.
+package dockerexec
 
 import (
+	"flag"
 	"strings"
 
 	"github.com/docker/docker/client"
 	"github.com/gliderlabs/ssh"
 	"github.com/tkw1536/proxyssh"
-	"github.com/tkw1536/proxyssh/server"
+	"github.com/tkw1536/proxyssh/feature"
 	"github.com/tkw1536/proxyssh/utils"
 )
 
-// ContainerExecConfig implements a server.Configuration and server.Handler that execute user processes within running docker containers.
+// ContainerExecConfig implements a proxyssh.Configuration and proxyssh.Handler that execute user processes within running docker containers.
 // For this purpose it makes use of 'docker exec'.
 //
 // The association of incoming user to a docker container happens via the username.
@@ -65,7 +66,7 @@ type ContainerExecConfig struct {
 
 // Apply applies this configuration to the server.
 func (cfg *ContainerExecConfig) Apply(logger utils.Logger, sshserver *ssh.Server) error {
-	sshserver.PublicKeyHandler = server.AuthorizeKeys(logger, func(ctx ssh.Context) ([]ssh.PublicKey, error) {
+	sshserver.PublicKeyHandler = feature.AuthorizeKeys(logger, func(ctx ssh.Context) ([]ssh.PublicKey, error) {
 		// find the (unique) associated container
 		container, err := FindUniqueContainer(cfg.Client, cfg.DockerLabelUser, ctx.User())
 		if err != nil {
@@ -102,4 +103,17 @@ func (cfg *ContainerExecConfig) Handle(logger utils.Logger, session ssh.Session)
 	}
 
 	return NewContainerExecProcess(cfg.Client, container.ID, command), nil
+}
+
+// RegisterFlags registers flags representing the config to the provided flagset.
+// When flagset is nil, uses flag.CommandLine.
+func (cfg *ContainerExecConfig) RegisterFlags(flagset *flag.FlagSet) {
+	if flagset == nil {
+		flagset = flag.CommandLine
+	}
+
+	flag.StringVar(&cfg.DockerLabelUser, "userlabel", cfg.DockerLabelUser, "Label to find docker files by")
+	flag.StringVar(&cfg.DockerLabelAuthFile, "keylabel", cfg.DockerLabelAuthFile, "Label to find the authorized_keys file by")
+
+	flag.StringVar(&cfg.ContainerShell, "shell", cfg.ContainerShell, "Shell to execute within the container")
 }

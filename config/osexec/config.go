@@ -1,7 +1,8 @@
-// Package shell provides SystemExecConfig.
-package shell
+// Package osexec provides SystemExecConfig.
+package osexec
 
 import (
+	"flag"
 	"strings"
 
 	"github.com/gliderlabs/ssh"
@@ -9,7 +10,7 @@ import (
 	"github.com/tkw1536/proxyssh/utils"
 )
 
-// SystemExecConfig implements a server.Configuration and server.Handler that execute user processes using the real system.
+// SystemExecConfig implements a proxyssh.Configuration and proxyssh.Handler that execute user processes using the real system.
 type SystemExecConfig struct {
 	// Shell is the shell to use for the server
 	// This is called like `shell -c "command"`` when an ssh command is provided or like `shell` when not.
@@ -35,4 +36,14 @@ func (cfg *SystemExecConfig) Handle(logger utils.Logger, session ssh.Session) (p
 
 	// create a new system process
 	return NewSystemProcess(cfg.Shell, args), nil
+}
+
+// RegisterFlags registers flags representing the config to the provided flagset.
+// When flagset is nil, uses flag.CommandLine.
+func (cfg *SystemExecConfig) RegisterFlags(flagset *flag.FlagSet) {
+	if flagset == nil {
+		flagset = flag.CommandLine
+	}
+
+	flag.StringVar(&cfg.Shell, "shell", cfg.Shell, "Shell to use")
 }

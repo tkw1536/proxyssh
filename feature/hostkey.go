@@ -1,4 +1,4 @@
-package server
+package feature
 
 import (
 	"crypto/ed25519"

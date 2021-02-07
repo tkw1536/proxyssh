@@ -72,9 +72,8 @@ import (
 	"time"
 
 	"github.com/tkw1536/proxyssh"
+	"github.com/tkw1536/proxyssh/config/osexec"
 	"github.com/tkw1536/proxyssh/legal"
-	"github.com/tkw1536/proxyssh/server"
-	"github.com/tkw1536/proxyssh/server/shell"
 )
 
 var logger = log.New(os.Stderr, "", log.LstdFlags)
@@ -95,7 +94,7 @@ func main() {
 	logger.Fatal(sshserver.ListenAndServe())
 }
 
-var options = &server.Options{
+var options = &proxyssh.Options{
 	ListenAddress: ":2222",
 	IdleTimeout:   time.Hour,
 
@@ -107,7 +106,7 @@ var options = &server.Options{
 	HostKeyPath: "hostkey.pem",
 }
 
-var config = &shell.SystemExecConfig{
+var config = &osexec.SystemExecConfig{
 	Shell: "/bin/bash",
 }
 
@@ -116,8 +115,5 @@ func init() {
 
 	legal.RegisterFlag(nil)
 	options.RegisterFlags(nil, false)
-
-	flag.StringVar(&config.Shell, "shell", config.Shell, "Shell to use")
-
-	flag.Parse()
+	config.RegisterFlags(nil)
 }

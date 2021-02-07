@@ -2,7 +2,6 @@ package proxyssh
 
 import (
 	"github.com/gliderlabs/ssh"
-	"github.com/tkw1536/proxyssh/server"
 	"github.com/tkw1536/proxyssh/utils"
 )
 
@@ -12,7 +11,7 @@ type Configuration interface {
 }
 
 // NewServer makes a new server, applies the appropriate configurations, and then applies the options.
-func NewServer(logger utils.Logger, options *server.Options, configurations ...Configuration) (*ssh.Server, error) {
+func NewServer(logger utils.Logger, options *Options, configurations ...Configuration) (*ssh.Server, error) {
 	server := &ssh.Server{}
 
 	for _, config := range configurations {

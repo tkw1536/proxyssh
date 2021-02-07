@@ -1,4 +1,4 @@
-package server
+package feature
 
 import (
 	"github.com/gliderlabs/ssh"

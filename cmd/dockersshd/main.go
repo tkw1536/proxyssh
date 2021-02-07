@@ -99,9 +99,8 @@ import (
 	"time"
 
 	"github.com/tkw1536/proxyssh"
+	"github.com/tkw1536/proxyssh/config/dockerexec"
 	"github.com/tkw1536/proxyssh/legal"
-	"github.com/tkw1536/proxyssh/server"
-	"github.com/tkw1536/proxyssh/server/docker"
 
 	"github.com/docker/docker/client"
 )
@@ -123,7 +122,7 @@ func main() {
 	logger.Fatal(sshserver.ListenAndServe())
 }
 
-var options = &server.Options{
+var options = &proxyssh.Options{
 	ListenAddress: ":2222",
 	IdleTimeout:   time.Hour,
 
@@ -135,7 +134,7 @@ var options = &server.Options{
 	HostKeyPath: "hostkey.pem",
 }
 
-var config = &docker.ContainerExecConfig{
+var config = &dockerexec.ContainerExecConfig{
 	Client: nil, // see below
 
 	DockerLabelUser:     "de.tkw1536.proxyssh.user",
@@ -149,11 +148,7 @@ func init() {
 
 	legal.RegisterFlag(nil)
 	options.RegisterFlags(nil, true)
-
-	flag.StringVar(&config.DockerLabelUser, "userlabel", config.DockerLabelUser, "Label to find docker files by")
-	flag.StringVar(&config.DockerLabelAuthFile, "keylabel", config.DockerLabelAuthFile, "Label to find the authorized_keys file by")
-
-	flag.StringVar(&config.ContainerShell, "shell", config.ContainerShell, "Shell to execute within the container")
+	config.RegisterFlags(nil)
 }
 
 func init() {

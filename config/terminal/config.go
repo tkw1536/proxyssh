@@ -1,7 +1,8 @@
-// Package forwarder provides EmptyConfiguration.
-package forwarder
+// Package terminal provides EmptyConfiguration.
+package terminal
 
 import (
+	"flag"
 	"io"
 
 	"github.com/gliderlabs/ssh"
@@ -18,6 +19,11 @@ type EmptyConfiguration struct {
 func (EmptyConfiguration) Apply(logger utils.Logger, sshserver *ssh.Server) error {
 	sshserver.Handler = handleNoCommand(logger)
 	return nil
+}
+
+// RegisterFlags registers flags representing the config to the provided flagset.
+// When flagset is nil, uses flag.CommandLine.
+func (EmptyConfiguration) RegisterFlags(flagset *flag.FlagSet) {
 }
 
 // Handle handles a new server process.

@@ -1,15 +1,15 @@
-// Package server provides Options
-package server
+package proxyssh
 
 import (
 	"flag"
 	"time"
 
 	"github.com/gliderlabs/ssh"
+	"github.com/tkw1536/proxyssh/feature"
 	"github.com/tkw1536/proxyssh/utils"
 )
 
-// Options are options shared by multiple server implementations
+// Options are options that implement features shared by several server implementations.
 type Options struct {
 	// ListenAddress is the address to listen on.
 	// It should be of the form 'address:port'.
@@ -20,7 +20,7 @@ type Options struct {
 	//
 	// When HostKeyPath is not the empty string, will pass both to UseOrMakeHostKeys.
 	HostKeyPath       string
-	HostKeyAlgorithms []HostKeyAlgorithm
+	HostKeyAlgorithms []feature.HostKeyAlgorithm
 
 	// DisableAuthentication allows to completly skip the authentication.
 	// This will result in a warning printed to the server
@@ -50,11 +50,11 @@ func (opts *Options) Apply(logger utils.Logger, sshserver *ssh.Server) error {
 	}
 
 	// setup port-forwarding
-	AllowPortForwarding(logger, sshserver, opts.ForwardAddresses, opts.ReverseAddresses)
+	feature.AllowPortForwarding(logger, sshserver, opts.ForwardAddresses, opts.ReverseAddresses)
 
 	// setup host keys
 	if opts.HostKeyPath != "" {
-		if err := UseOrMakeHostKeys(logger, sshserver, opts.HostKeyPath, opts.HostKeyAlgorithms); err != nil {
+		if err := feature.UseOrMakeHostKeys(logger, sshserver, opts.HostKeyPath, opts.HostKeyAlgorithms); err != nil {
 			return err
 		}
 	}

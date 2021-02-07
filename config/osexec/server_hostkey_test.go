@@ -1,4 +1,4 @@
-package shell
+package osexec
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/gliderlabs/ssh"
-	"github.com/tkw1536/proxyssh/server"
+	"github.com/tkw1536/proxyssh/feature"
 	"github.com/tkw1536/proxyssh/testutils"
 	gossh "golang.org/x/crypto/ssh"
 )
@@ -27,7 +27,7 @@ func TestReadOrMakeHostKey(t *testing.T) {
 			defer cleanup()
 
 			// test actual: try to load the key
-			signer, err := server.ReadOrMakeHostKey(testutils.GetTestLogger(), tmpFile, tt.algorithm)
+			signer, err := feature.ReadOrMakeHostKey(testutils.GetTestLogger(), tmpFile, tt.algorithm)
 			if err != nil {
 				t.Errorf("ReadOrMakeHostKey() error = %v, wantError = nil", err)
 			}
@@ -47,7 +47,7 @@ func TestReadOrMakeHostKey(t *testing.T) {
 			cleanup()
 
 			// test actual: ReadOrMakeHostKey should make a new file
-			signer, err := server.ReadOrMakeHostKey(testutils.GetTestLogger(), tmpFile, tt.algorithm)
+			signer, err := feature.ReadOrMakeHostKey(testutils.GetTestLogger(), tmpFile, tt.algorithm)
 			if err != nil {
 				t.Errorf("ReadOrMakeHostKey() error = %v, wantError = nil", err)
 			}
@@ -66,7 +66,7 @@ func TestReadOrMakeHostKey(t *testing.T) {
 			defer cleanup()
 
 			// test actual: ReadOrMakeHostKey should error
-			signer, err := server.ReadOrMakeHostKey(testutils.GetTestLogger(), tmpFile, tt.algorithm)
+			signer, err := feature.ReadOrMakeHostKey(testutils.GetTestLogger(), tmpFile, tt.algorithm)
 			if err == nil {
 				t.Errorf("ReadOrMakeHostKey() error = %v, wantError != nil", err)
 			}
@@ -83,12 +83,12 @@ func TestReadOrMakeHostKey(t *testing.T) {
 }
 
 var testKeys = []struct {
-	algorithm  server.HostKeyAlgorithm
+	algorithm  feature.HostKeyAlgorithm
 	publicKey  string
 	privateKey string
 }{
 	{
-		algorithm: server.RSAAlgorithm,
+		algorithm: feature.RSAAlgorithm,
 		privateKey: `-----BEGIN RSA PRIVATE KEY-----
 MIIEpAIBAAKCAQEAvEjBnZHJQo7mXpPW94JnH+pXBi0wdaqQ4wgFaMACjmkCnT2Y
 Up6zAR9GXaiKcZGIItBrZ53VPEbGLMysLo1fbg3i8n9qyGkjHkbbOk0FKb1sgb9Y
@@ -120,7 +120,7 @@ cYkgpFn+ZrD7OFj3d/DbO38redzOl6Bi9u0VPCsyw6ejjGuu53ZJuws1CV8vSLP3
 		`,
 	},
 	{
-		algorithm: server.ED25519Algorithm,
+		algorithm: feature.ED25519Algorithm,
 		privateKey: `-----BEGIN PRIVATE KEY-----
 5XWK7d7RseuAEPacEEKBCBrTVVX83VAQrLhdfwphSr4=
 -----END PRIVATE KEY-----
@@ -143,7 +143,7 @@ func TestUseOrMakeHostKey(t *testing.T) {
 			tmpFile, cleanup := testutils.WriteTempFile("privkey.pem", tt.privateKey)
 			defer cleanup()
 
-			err := server.UseOrMakeHostKey(testutils.GetTestLogger(), testServer, tmpFile, tt.algorithm)
+			err := feature.UseOrMakeHostKey(testutils.GetTestLogger(), testServer, tmpFile, tt.algorithm)
 			if err != nil {
 				t.Errorf("UseOrMakeHostKey() error = %v, wantError = nil", err)
 				t.FailNow()

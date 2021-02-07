@@ -1,4 +1,4 @@
-package shell
+package osexec
 
 import (
 	"net"
@@ -7,7 +7,6 @@ import (
 
 	"github.com/gliderlabs/ssh"
 	"github.com/tkw1536/proxyssh"
-	"github.com/tkw1536/proxyssh/server"
 	"github.com/tkw1536/proxyssh/testutils"
 	"github.com/tkw1536/proxyssh/utils"
 )
@@ -29,7 +28,7 @@ func TestMain(m *testing.M) {
 	var err error
 	testServer, err = proxyssh.NewServer(
 		testutils.GetTestLogger(),
-		&server.Options{
+		&proxyssh.Options{
 			ForwardAddresses: []utils.NetworkAddress{forwardPortsAllow},
 			ReverseAddresses: []utils.NetworkAddress{reversePortsAllow},
 		},
