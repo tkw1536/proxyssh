@@ -222,7 +222,7 @@ func (cep *ContainerExecProcess) Start(Term string, resizeChan <-chan proxyssh.W
 	}
 
 	// start streaming
-	if err := cep.execAndStream(true); err != nil {
+	if err := cep.execAndStream(isPty); err != nil {
 		return nil, err
 	}
 
