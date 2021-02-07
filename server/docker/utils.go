@@ -20,7 +20,7 @@ var ErrContainerNotUnique = errors.New("No unique container found")
 //
 // If there is no unique runing container, returns ErrContainerNotUnique.
 // If something goes wrong, other errors may be returned.
-func FindUniqueContainer(cli *client.Client, key string, value string) (container types.Container, err error) {
+func FindUniqueContainer(cli client.APIClient, key string, value string) (container types.Container, err error) {
 	// Setup a filter for a running container with the given key/value label
 	Filters := filters.NewArgs()
 	Filters.Add("label", fmt.Sprintf("%s=%s", key, value))
@@ -60,7 +60,7 @@ type SSHAuthOptions struct {
 // Location of stored credentials is determined by options.
 //
 // This function will ignore all errors and or invalid values.
-func FindContainerKeys(cli *client.Client, container types.Container, options SSHAuthOptions) (keys []ssh.PublicKey) {
+func FindContainerKeys(cli client.APIClient, container types.Container, options SSHAuthOptions) (keys []ssh.PublicKey) {
 
 	// Check the key label of a provided container for ssh public keys
 	// Note that if LabelKey is "", hasKey will return false because a docker label can not be blank.

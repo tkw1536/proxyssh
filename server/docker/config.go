@@ -44,7 +44,7 @@ import (
 type ContainerExecConfig struct {
 
 	// Client is the docker client to be used to the docker daemon.
-	Client *client.Client
+	Client client.APIClient
 
 	// DockerLabelUser is the label to use for associating a user to a container.
 	DockerLabelUser string

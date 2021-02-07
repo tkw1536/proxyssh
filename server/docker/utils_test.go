@@ -14,7 +14,7 @@ func TestFindUniqueContainer(t *testing.T) {
 		t.Skip("Skipping docker-compose test in short mode")
 	}
 
-	testutils.RunComposeTest(findUniqueContainerCompose, nil, func(cli *client.Client, findService func(name string) types.Container, stopService func(name string)) error {
+	testutils.RunComposeTest(findUniqueContainerCompose, nil, func(cli client.APIClient, findService func(name string) types.Container, stopService func(name string)) error {
 		t.Run("find a single container", func(t *testing.T) {
 			container, err := FindUniqueContainer(cli, "de.tkw01536.test", "a")
 			if err != nil {
@@ -108,7 +108,7 @@ func TestFindContainerKeys(t *testing.T) {
 	testutils.RunComposeTest(findAuthContainerCompose, map[string]string{
 		"authorized_key_a": testutils.AuthorizedKeysString(testPublicKeyA) + "\n",
 		"authorized_key_b": testutils.AuthorizedKeysString(testPublicKeyB) + "\n",
-	}, func(cli *client.Client, findService func(name string) types.Container, stopService func(name string)) error {
+	}, func(cli client.APIClient, findService func(name string) types.Container, stopService func(name string)) error {
 		// tests for finding keys in environment variable
 
 		t.Run("container with unset LabelKey returns no keys", func(t *testing.T) {

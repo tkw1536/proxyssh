@@ -27,7 +27,7 @@ import (
 // findService is a function that is provided a name of a service, and returns the container within the current docker-compose context.
 //
 // stopService and is a function that can be used to stop a particular service in the docker-compose service.
-type ComposeTestCode func(cli *client.Client, findService func(string) types.Container, stopService func(string)) error
+type ComposeTestCode func(cli client.APIClient, findService func(string) types.Container, stopService func(string)) error
 
 // RunComposeTest runs a docker-compose based test.
 // It first starts the docker-compose configuration contained in the string.

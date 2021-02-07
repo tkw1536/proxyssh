@@ -48,7 +48,7 @@ import (
 // NewContainerExecProcess creates a process that executes within a docker container.
 //
 // The command will not prefix the entrypoint.
-func NewContainerExecProcess(client *client.Client, containerID string, command []string) *ContainerExecProcess {
+func NewContainerExecProcess(client client.APIClient, containerID string, command []string) *ContainerExecProcess {
 	config := types.ExecConfig{
 		AttachStdin:  true,
 		AttachStderr: true,
@@ -67,7 +67,7 @@ func NewContainerExecProcess(client *client.Client, containerID string, command 
 // ContainerExecProcess represents a process running inside a docker engine
 type ContainerExecProcess struct {
 	// environment
-	client *client.Client
+	client client.APIClient
 	ctx    context.Context
 
 	// parameters
