@@ -50,7 +50,7 @@ import (
 
 	"github.com/tkw1536/proxyssh"
 	"github.com/tkw1536/proxyssh/config/terminal"
-	"github.com/tkw1536/proxyssh/legal"
+	"github.com/tkw1536/proxyssh/internal/legal"
 )
 
 var logger = log.New(os.Stderr, "", log.LstdFlags)

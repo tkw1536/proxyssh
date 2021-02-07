@@ -6,7 +6,7 @@ import (
 
 	"github.com/gliderlabs/ssh"
 	"github.com/tkw1536/proxyssh/feature"
-	"github.com/tkw1536/proxyssh/utils"
+	"github.com/tkw1536/proxyssh/internal/utils"
 )
 
 // Options are options that implement features shared by several server implementations.

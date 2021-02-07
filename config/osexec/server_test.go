@@ -8,7 +8,7 @@ import (
 	"github.com/gliderlabs/ssh"
 	"github.com/tkw1536/proxyssh"
 	"github.com/tkw1536/proxyssh/feature"
-	"github.com/tkw1536/proxyssh/testutils"
+	"github.com/tkw1536/proxyssh/internal/testutils"
 )
 
 var testServer *ssh.Server

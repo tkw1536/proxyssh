@@ -6,7 +6,7 @@ import (
 	"io"
 
 	"github.com/gliderlabs/ssh"
-	"github.com/tkw1536/proxyssh/utils"
+	"github.com/tkw1536/proxyssh/internal/utils"
 	"golang.org/x/crypto/ssh/terminal"
 )
 

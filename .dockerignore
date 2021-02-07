@@ -6,8 +6,6 @@
 
 !cmd
 !docker
-!legal
 !config
 !feature
-!testutils
-!utils
+!internal

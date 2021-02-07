@@ -6,7 +6,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	"github.com/gliderlabs/ssh"
-	"github.com/tkw1536/proxyssh/testutils"
+	"github.com/tkw1536/proxyssh/internal/testutils"
 )
 
 func TestFindUniqueContainer(t *testing.T) {

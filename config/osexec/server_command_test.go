@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/tkw1536/proxyssh/testutils"
+	"github.com/tkw1536/proxyssh/internal/testutils"
 	gossh "golang.org/x/crypto/ssh"
 )
 

@@ -2,7 +2,7 @@ package feature
 
 import (
 	"github.com/gliderlabs/ssh"
-	"github.com/tkw1536/proxyssh/utils"
+	"github.com/tkw1536/proxyssh/internal/utils"
 )
 
 // AuthorizeKeys returns an ssh.PublicKeysHandler that calls keyfinder() and authorizes all keys returned by the handler.

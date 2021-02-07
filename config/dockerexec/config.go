@@ -9,7 +9,7 @@ import (
 	"github.com/gliderlabs/ssh"
 	"github.com/tkw1536/proxyssh"
 	"github.com/tkw1536/proxyssh/feature"
-	"github.com/tkw1536/proxyssh/utils"
+	"github.com/tkw1536/proxyssh/internal/utils"
 )
 
 // ContainerExecConfig implements a proxyssh.Configuration and proxyssh.Handler that execute user processes within running docker containers.

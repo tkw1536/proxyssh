@@ -13,7 +13,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/tkw1536/proxyssh"
-	"github.com/tkw1536/proxyssh/utils"
+	"github.com/tkw1536/proxyssh/internal/utils"
 )
 
 // Code is this file is roughly adapted from https://github.com/docker/cli/blob/master/cli/command/container/exec.go

@@ -100,7 +100,7 @@ import (
 
 	"github.com/tkw1536/proxyssh"
 	"github.com/tkw1536/proxyssh/config/dockerexec"
-	"github.com/tkw1536/proxyssh/legal"
+	"github.com/tkw1536/proxyssh/internal/legal"
 
 	"github.com/docker/docker/client"
 )

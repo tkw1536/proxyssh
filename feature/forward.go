@@ -2,7 +2,7 @@ package feature
 
 import (
 	"github.com/gliderlabs/ssh"
-	"github.com/tkw1536/proxyssh/utils"
+	"github.com/tkw1536/proxyssh/internal/utils"
 )
 
 // AllowForwardTo returns a ssh.LocalPortForwardingCallback that allows forwarding traffic to the provided addresses only.
