@@ -9,7 +9,7 @@ import (
 	"github.com/gliderlabs/ssh"
 	"github.com/pkg/errors"
 	"github.com/tkw1536/proxyssh/internal/lock"
-	"github.com/tkw1536/proxyssh/internal/logging"
+	"github.com/tkw1536/proxyssh/logging"
 )
 
 // Session represents an ongoing ssh.Session executing a Process

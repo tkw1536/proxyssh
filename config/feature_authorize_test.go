@@ -1,11 +1,11 @@
-package osexec
+package config
 
 import (
 	"testing"
 
 	"github.com/gliderlabs/ssh"
 	"github.com/tkw1536/proxyssh/feature"
-	"github.com/tkw1536/proxyssh/internal/logging"
+	"github.com/tkw1536/proxyssh/internal/integrationtest"
 	"github.com/tkw1536/proxyssh/internal/testutils"
 	gossh "golang.org/x/crypto/ssh"
 )
@@ -17,7 +17,10 @@ var (
 )
 
 func TestAuthorizeKeys(t *testing.T) {
-	testServer.PublicKeyHandler = feature.AuthorizeKeys(logging.GetTestLogger(), func(ctx ssh.Context) (keys []ssh.PublicKey, err error) {
+	testServer, testLogger, cleanup := integrationtest.NewServer(nil)
+	defer cleanup()
+
+	testServer.PublicKeyHandler = feature.AuthorizeKeys(testLogger, func(ctx ssh.Context) (keys []ssh.PublicKey, err error) {
 		switch ctx.User() {
 		// user1 has keys allowedPublicKeyA dn allowedPublicKeyB
 		case "user1":
@@ -29,9 +32,6 @@ func TestAuthorizeKeys(t *testing.T) {
 		}
 		return
 	})
-	defer func() {
-		testServer.PublicKeyHandler = nil
-	}()
 
 	var tests = []struct {
 		name      string
@@ -104,7 +104,7 @@ func TestAuthorizeKeys(t *testing.T) {
 				Auth: []gossh.AuthMethod{
 					gossh.PublicKeys(tt.clientKey),
 				},
-			}, "exit 0", "")
+			}, "", "")
 			if tt.wantOK && err != nil {
 				t.Error("AuthorizeKeys() unexpectedly denied access even though it shouldn't have")
 			} else if !tt.wantOK && err == nil {

@@ -7,7 +7,7 @@ import (
 
 	"github.com/gliderlabs/ssh"
 	"github.com/tkw1536/proxyssh"
-	"github.com/tkw1536/proxyssh/internal/logging"
+	"github.com/tkw1536/proxyssh/logging"
 )
 
 // SystemExecConfig implements a proxyssh.Configuration and proxyssh.Handler that execute user processes using the real system.

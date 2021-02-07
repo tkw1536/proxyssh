@@ -5,7 +5,8 @@
 !*.go
 
 !cmd
-!docker
 !config
+!docker
 !feature
 !internal
+!logging

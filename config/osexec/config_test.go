@@ -4,11 +4,18 @@ import (
 	"testing"
 	"time"
 
+	"github.com/tkw1536/proxyssh/internal/integrationtest"
 	"github.com/tkw1536/proxyssh/internal/testutils"
 	gossh "golang.org/x/crypto/ssh"
 )
 
+var commandTestConfig = &SystemExecConfig{
+	Shell: "/bin/bash",
+}
+
 func TestCommand(t *testing.T) {
+	testServer, _, cleanup := integrationtest.NewServer(nil, commandTestConfig)
+	defer cleanup()
 
 	tests := []struct {
 		name    string
@@ -87,6 +94,9 @@ func TestCommand(t *testing.T) {
 }
 
 func TestCommandIsKilled(t *testing.T) {
+	testServer, _, cleanup := integrationtest.NewServer(nil, commandTestConfig)
+	defer cleanup()
+
 	waitKillTimeout := 1 * time.Second
 	t.Run("closing the network connection kills the process", func(t *testing.T) {
 		// run a new session

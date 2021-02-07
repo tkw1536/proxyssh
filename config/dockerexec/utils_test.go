@@ -6,6 +6,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	"github.com/gliderlabs/ssh"
+	"github.com/tkw1536/proxyssh/internal/integrationtest"
 	"github.com/tkw1536/proxyssh/internal/testutils"
 )
 
@@ -14,7 +15,7 @@ func TestFindUniqueContainer(t *testing.T) {
 		t.Skip("Skipping docker-compose test in short mode")
 	}
 
-	testutils.RunComposeTest(findUniqueContainerCompose, nil, func(cli client.APIClient, findService func(name string) types.Container, stopService func(name string)) error {
+	integrationtest.RunComposeTest(findUniqueContainerCompose, nil, func(cli client.APIClient, findService func(name string) types.Container, stopService func(name string)) error {
 		t.Run("find a single container", func(t *testing.T) {
 			container, err := FindUniqueContainer(cli, "de.tkw01536.test", "a")
 			if err != nil {
@@ -105,7 +106,7 @@ func TestFindContainerKeys(t *testing.T) {
 		t.Skip("Skipping docker-compose test in short mode")
 	}
 
-	testutils.RunComposeTest(findAuthContainerCompose, map[string]string{
+	integrationtest.RunComposeTest(findAuthContainerCompose, map[string]string{
 		"authorized_key_a": testutils.AuthorizedKeysString(testPublicKeyA) + "\n",
 		"authorized_key_b": testutils.AuthorizedKeysString(testPublicKeyB) + "\n",
 	}, func(cli client.APIClient, findService func(name string) types.Container, stopService func(name string)) error {

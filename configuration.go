@@ -2,7 +2,7 @@ package proxyssh
 
 import (
 	"github.com/gliderlabs/ssh"
-	"github.com/tkw1536/proxyssh/internal/logging"
+	"github.com/tkw1536/proxyssh/logging"
 )
 
 // Configuration is a configuration for an ssh.Server.

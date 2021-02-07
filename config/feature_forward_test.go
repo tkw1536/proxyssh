@@ -1,15 +1,35 @@
-package osexec
+package config
 
 import (
 	"io/ioutil"
 	"net"
 	"testing"
 
+	"github.com/tkw1536/proxyssh"
+	"github.com/tkw1536/proxyssh/feature"
+	"github.com/tkw1536/proxyssh/internal/integrationtest"
 	"github.com/tkw1536/proxyssh/internal/testutils"
 	gossh "golang.org/x/crypto/ssh"
 )
 
+// make addresses for forward and reverse forwarding
+var (
+	forwardPortsAllow = feature.MustParseNetworkAddress(testutils.NewTestListenAddress())
+	forwardPortsDeny  = feature.MustParseNetworkAddress(testutils.NewTestListenAddress())
+
+	reversePortsAllow = feature.MustParseNetworkAddress(testutils.NewTestListenAddress())
+	reversePortsDeny  = feature.MustParseNetworkAddress(testutils.NewTestListenAddress())
+)
+
+var forwardTestOptions = &proxyssh.Options{
+	ForwardAddresses: []feature.NetworkAddress{forwardPortsAllow},
+	ReverseAddresses: []feature.NetworkAddress{reversePortsAllow},
+}
+
 func TestPortForwardingForward(t *testing.T) {
+	testServer, _, cleanup := integrationtest.NewServer(forwardTestOptions)
+	defer cleanup()
+
 	t.Run("forward port forwarding works on an allowed port", func(t *testing.T) {
 		// make a new session with port forwarding
 		conn, _, err := testutils.NewTestServerSession(
@@ -82,6 +102,9 @@ func TestPortForwardingForward(t *testing.T) {
 }
 
 func TestPortForwardingReverse(t *testing.T) {
+	testServer, _, cleanup := integrationtest.NewServer(forwardTestOptions)
+	defer cleanup()
+
 	t.Run("reverse port forwarding works on an allowed port", func(t *testing.T) {
 		// make a new session with port forwarding
 		conn, _, err := testutils.NewTestServerSession(

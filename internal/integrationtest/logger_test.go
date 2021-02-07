@@ -1,25 +1,24 @@
-// Package testutils contains various functions to be used by the tests of the proxyssh package.
-// It is not intended to be used publicly, and no versioning guarantees apply.
-package logging
+package integrationtest
 
 import (
-	"log"
 	"sync"
 	"testing"
+
+	"github.com/tkw1536/proxyssh/logging"
 )
 
-func TestGetTestLogger(t *testing.T) {
+func TestGetLogger(t *testing.T) {
 	N := 10000
 
 	// make a list of loggers
 	var wg sync.WaitGroup
-	loggers := make([]*log.Logger, N)
+	loggers := make([]logging.Logger, N)
 
 	// wait to fill all of them
 	wg.Add(N)
 	for i := 0; i < N; i++ {
 		go func(i int) {
-			loggers[i] = GetTestLogger()
+			loggers[i] = GetLogger()
 			wg.Done()
 		}(i)
 	}
@@ -29,13 +28,13 @@ func TestGetTestLogger(t *testing.T) {
 	// check that the first logger is not nil
 	firstLogger := loggers[0]
 	if firstLogger == nil {
-		t.Error("TestLogger() first call returned nil")
+		t.Error("GetLogger() first call returned nil")
 	}
 
 	// check that the rest are all equal
 	for _, logger := range loggers[1:] {
 		if logger != firstLogger {
-			t.Error("TestLogger() returned different instances")
+			t.Error("GetLogger() returned different instances")
 		}
 	}
 

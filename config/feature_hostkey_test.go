@@ -1,4 +1,4 @@
-package osexec
+package config
 
 import (
 	"fmt"
@@ -8,12 +8,13 @@ import (
 
 	"github.com/gliderlabs/ssh"
 	"github.com/tkw1536/proxyssh/feature"
-	"github.com/tkw1536/proxyssh/internal/logging"
+	"github.com/tkw1536/proxyssh/internal/integrationtest"
 	"github.com/tkw1536/proxyssh/internal/testutils"
 	gossh "golang.org/x/crypto/ssh"
 )
 
 func TestReadOrMakeHostKey(t *testing.T) {
+
 	for _, tt := range testKeys {
 
 		// get the public key
@@ -28,7 +29,7 @@ func TestReadOrMakeHostKey(t *testing.T) {
 			defer cleanup()
 
 			// test actual: try to load the key
-			signer, err := feature.ReadOrMakeHostKey(logging.GetTestLogger(), tmpFile, tt.algorithm)
+			signer, err := feature.ReadOrMakeHostKey(integrationtest.GetLogger(), tmpFile, tt.algorithm)
 			if err != nil {
 				t.Errorf("ReadOrMakeHostKey() error = %v, wantError = nil", err)
 			}
@@ -48,7 +49,7 @@ func TestReadOrMakeHostKey(t *testing.T) {
 			cleanup()
 
 			// test actual: ReadOrMakeHostKey should make a new file
-			signer, err := feature.ReadOrMakeHostKey(logging.GetTestLogger(), tmpFile, tt.algorithm)
+			signer, err := feature.ReadOrMakeHostKey(integrationtest.GetLogger(), tmpFile, tt.algorithm)
 			if err != nil {
 				t.Errorf("ReadOrMakeHostKey() error = %v, wantError = nil", err)
 			}
@@ -67,7 +68,7 @@ func TestReadOrMakeHostKey(t *testing.T) {
 			defer cleanup()
 
 			// test actual: ReadOrMakeHostKey should error
-			signer, err := feature.ReadOrMakeHostKey(logging.GetTestLogger(), tmpFile, tt.algorithm)
+			signer, err := feature.ReadOrMakeHostKey(integrationtest.GetLogger(), tmpFile, tt.algorithm)
 			if err == nil {
 				t.Errorf("ReadOrMakeHostKey() error = %v, wantError != nil", err)
 			}
@@ -131,6 +132,9 @@ cYkgpFn+ZrD7OFj3d/DbO38redzOl6Bi9u0VPCsyw6ejjGuu53ZJuws1CV8vSLP3
 }
 
 func TestUseOrMakeHostKey(t *testing.T) {
+	testServer, testLogger, cleanup := integrationtest.NewServer(nil)
+	defer cleanup()
+
 	for _, tt := range testKeys {
 
 		// get the public key
@@ -144,7 +148,7 @@ func TestUseOrMakeHostKey(t *testing.T) {
 			tmpFile, cleanup := testutils.WriteTempFile("privkey.pem", tt.privateKey)
 			defer cleanup()
 
-			err := feature.UseOrMakeHostKey(logging.GetTestLogger(), testServer, tmpFile, tt.algorithm)
+			err := feature.UseOrMakeHostKey(testLogger, testServer, tmpFile, tt.algorithm)
 			if err != nil {
 				t.Errorf("UseOrMakeHostKey() error = %v, wantError = nil", err)
 				t.FailNow()

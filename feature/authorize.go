@@ -2,8 +2,10 @@ package feature
 
 import (
 	"github.com/gliderlabs/ssh"
-	"github.com/tkw1536/proxyssh/internal/logging"
+	"github.com/tkw1536/proxyssh/logging"
 )
+
+// Because of import cyles, tests for this file reside in config/feature_authorize_test.go.
 
 // AuthorizeKeys returns an ssh.PublicKeysHandler that calls keyfinder() and authorizes all keys returned by the handler.
 //

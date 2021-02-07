@@ -83,7 +83,7 @@ var options = &proxyssh.Options{
 	HostKeyPath: "hostkey.pem",
 }
 
-var config = &terminal.EmptyConfiguration{}
+var config = &terminal.REPLConfig{}
 
 func init() {
 	defer flag.Parse()

@@ -5,7 +5,7 @@ import (
 
 	"github.com/gliderlabs/ssh"
 	"github.com/pkg/errors"
-	"github.com/tkw1536/proxyssh/internal/logging"
+	"github.com/tkw1536/proxyssh/logging"
 )
 
 // Handler represents a Configuration that provides a handler.

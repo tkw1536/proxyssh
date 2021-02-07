@@ -12,9 +12,11 @@ import (
 
 	"github.com/gliderlabs/ssh"
 	"github.com/pkg/errors"
-	"github.com/tkw1536/proxyssh/internal/logging"
+	"github.com/tkw1536/proxyssh/logging"
 	gossh "golang.org/x/crypto/ssh"
 )
+
+// Because of import cyles, tests for this file reside in config/feature_hostkey_test.go.
 
 // UseOrMakeHostKeys is like UseOrMakeHostKey except that it accepts multiple HostKeyAlgorithms.
 // For each key algorithm, the privateKeyPath is appended with "_" + the name of the algorithm in question.

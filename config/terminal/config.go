@@ -1,4 +1,4 @@
-// Package terminal provides EmptyConfiguration.
+// Package terminal provides REPLConfig.
 package terminal
 
 import (
@@ -6,24 +6,24 @@ import (
 	"io"
 
 	"github.com/gliderlabs/ssh"
-	"github.com/tkw1536/proxyssh/internal/logging"
+	"github.com/tkw1536/proxyssh/logging"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
-// EmptyConfiguration implements a configuration that does not provide any shell access.
-type EmptyConfiguration struct {
+// REPLConfig implements a configuration that does not provide any shell access.
+type REPLConfig struct {
 }
 
 // Apply applies this configuration to a server.
 // This is a no-op.
-func (EmptyConfiguration) Apply(logger logging.Logger, sshserver *ssh.Server) error {
+func (REPLConfig) Apply(logger logging.Logger, sshserver *ssh.Server) error {
 	sshserver.Handler = handleNoCommand(logger)
 	return nil
 }
 
 // RegisterFlags registers flags representing the config to the provided flagset.
 // When flagset is nil, uses flag.CommandLine.
-func (EmptyConfiguration) RegisterFlags(flagset *flag.FlagSet) {
+func (REPLConfig) RegisterFlags(flagset *flag.FlagSet) {
 }
 
 // Handle handles a new server process.
