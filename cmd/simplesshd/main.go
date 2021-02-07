@@ -67,74 +67,57 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"os"
 	"time"
 
+	"github.com/tkw1536/proxyssh"
 	"github.com/tkw1536/proxyssh/legal"
 	"github.com/tkw1536/proxyssh/server"
 	"github.com/tkw1536/proxyssh/server/shell"
-	"github.com/tkw1536/proxyssh/utils"
 )
 
 var logger = log.New(os.Stderr, "", log.LstdFlags)
 
 func main() {
 
-	sshserver, err := server.NewServer(logger, server.Options{
-		ListenAddress: listenAddress,
-		IdleTimeout:   idleTimeout,
-
-		ForwardAddresses: forwardPorts,
-		ReverseAddresses: reversePorts,
-
-		HostKeyPath: hostKeyPath,
-	}, &shell.SystemExecConfig{
-		Shell: shellPath,
-	})
+	sshserver, err := proxyssh.NewServer(
+		logger,
+		options,
+		config,
+	)
 
 	if err != nil {
 		logger.Fatalf("Failed to initialize server: %s", err)
 	}
 
-	logger.Printf("Listening on %s", listenAddress)
+	logger.Printf("Listening on %s", options.ListenAddress)
 	logger.Fatal(sshserver.ListenAndServe())
 }
 
-var (
-	listenAddress = ":2222"
+var options = &server.Options{
+	ListenAddress: ":2222",
+	IdleTimeout:   time.Hour,
 
-	idleTimeout = time.Hour
+	DisableAuthentication: false,
 
-	shellPath = "/bin/bash"
+	ForwardAddresses: nil,
+	ReverseAddresses: nil,
 
-	forwardPorts = utils.NetworkAddressListVar(nil)
-	reversePorts = utils.NetworkAddressListVar(nil)
+	HostKeyPath: "hostkey.pem",
+}
 
-	hostKeyPath = "hostkey.pem"
-)
+var config = &shell.SystemExecConfig{
+	Shell: "/bin/bash",
+}
 
 func init() {
-	var legalFlag bool
-	flag.BoolVar(&legalFlag, "legal", legalFlag, "Print legal notices and exit")
-	defer func() {
-		if legalFlag {
-			fmt.Println("This executable contains code from several different go packages. ")
-			fmt.Println("Some of these packages require licensing information to be made available to the end user. ")
-			fmt.Println(legal.Notices)
-			os.Exit(0)
-		}
-	}()
+	defer flag.Parse()
 
-	flag.StringVar(&listenAddress, "port", listenAddress, "Port to listen on")
-	flag.DurationVar(&idleTimeout, "timeout", idleTimeout, "Timeout to kill inactive connections after")
-	flag.StringVar(&shellPath, "shell", shellPath, "Shell to use")
+	legal.RegisterFlag(nil)
+	options.RegisterFlags(nil, false)
 
-	flag.Var(&forwardPorts, "L", "Ports to allow local forwarding for")
-	flag.Var(&reversePorts, "R", "Ports to allow reverse forwarding for")
-
-	flag.StringVar(&hostKeyPath, "hostkey", hostKeyPath, "Path to the host key")
+	flag.StringVar(&config.Shell, "shell", config.Shell, "Shell to use")
 
 	flag.Parse()
 }

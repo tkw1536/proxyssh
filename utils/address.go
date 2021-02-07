@@ -62,12 +62,14 @@ func (p NetworkAddress) String() string {
 
 // NetworkAddressListVar represents a "flag".Value that contains a list of network addresses.
 // It can be passed multiple times, and collects all NetworkAddress in an ordered list.
-type NetworkAddressListVar []NetworkAddress
+type NetworkAddressListVar struct {
+	Addresses *[]NetworkAddress
+}
 
 // String turns this NetworkAddressListVar into a comma-seperated list of network addresses.
 func (p *NetworkAddressListVar) String() string {
-	ports := make([]string, len(*p))
-	for i, ph := range *p {
+	ports := make([]string, len(*p.Addresses))
+	for i, ph := range *p.Addresses {
 		ports[i] = ph.String()
 	}
 
@@ -81,7 +83,7 @@ func (p *NetworkAddressListVar) Set(value string) (err error) {
 	if err != nil {
 		return err
 	}
-	*p = append(*p, newPort)
+	*p.Addresses = append(*p.Addresses, newPort)
 	return
 }
 

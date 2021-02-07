@@ -94,15 +94,14 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"log"
 	"os"
 	"time"
 
+	"github.com/tkw1536/proxyssh"
 	"github.com/tkw1536/proxyssh/legal"
 	"github.com/tkw1536/proxyssh/server"
 	"github.com/tkw1536/proxyssh/server/docker"
-	"github.com/tkw1536/proxyssh/utils"
 
 	"github.com/docker/docker/client"
 )
@@ -110,90 +109,58 @@ import (
 var logger = log.New(os.Stderr, "", log.LstdFlags)
 
 func main() {
-	sshserver, err := server.NewServer(logger, server.Options{
-		ListenAddress: listenAddress,
-		IdleTimeout:   idleTimeout,
-
-		ForwardAddresses: forwardAddresses,
-		ReverseAddresses: reverseAddresses,
-
-		DisableAuthentication: disableAuthentication,
-
-		HostKeyPath: hostKeyPath,
-	}, &docker.ContainerExecConfig{
-		Client: cli,
-
-		DockerLabelUser:     dockerLabelUser,
-		DockerLabelAuthFile: dockerLabelAuthFile,
-
-		ContainerShell: containerShell,
-	})
+	sshserver, err := proxyssh.NewServer(
+		logger,
+		options,
+		config,
+	)
 
 	if err != nil {
 		logger.Fatalf("Failed to initialize server: %s", err)
 	}
 
-	logger.Printf("Listening on %s", listenAddress)
+	logger.Printf("Listening on %s", options.ListenAddress)
 	logger.Fatal(sshserver.ListenAndServe())
 }
 
-var (
-	listenAddress = ":2222"
+var options = &server.Options{
+	ListenAddress: ":2222",
+	IdleTimeout:   time.Hour,
 
-	dockerLabelUser     = "de.tkw1536.proxyssh.user"
-	dockerLabelAuthFile = "de.tkw1536.proxyssh.authfile"
+	DisableAuthentication: false,
 
-	containerShell = "/bin/sh"
+	ForwardAddresses: nil,
+	ReverseAddresses: nil,
 
-	disableAuthentication = false
-
-	idleTimeout = 1 * time.Hour
-
-	forwardAddresses = utils.NetworkAddressListVar(nil)
-	reverseAddresses = utils.NetworkAddressListVar(nil)
-
-	hostKeyPath = "hostkey.pem"
-)
-
-func init() {
-
-	var legalFlag bool
-	flag.BoolVar(&legalFlag, "legal", legalFlag, "Print legal notices and exit")
-	defer func() {
-		if legalFlag {
-			fmt.Println("This executable contains code from several different go packages. ")
-			fmt.Println("Some of these packages require licensing information to be made available to the end user. ")
-			fmt.Println(legal.Notices)
-			os.Exit(0)
-		}
-	}()
-
-	flag.StringVar(&listenAddress, "port", listenAddress, "Port to listen on")
-	flag.DurationVar(&idleTimeout, "timeout", idleTimeout, "Idle Timeout")
-
-	flag.StringVar(&dockerLabelUser, "userlabel", dockerLabelUser, "Label to find docker files by")
-	flag.StringVar(&dockerLabelAuthFile, "keylabel", dockerLabelAuthFile, "Label to find the authorized_keys file by")
-
-	flag.StringVar(&containerShell, "shell", containerShell, "Shell to execute within the container")
-
-	flag.BoolVar(&disableAuthentication, "unsafe", disableAuthentication, "Disable ssh server authentication and alllow anyone to connect")
-
-	flag.Var(&forwardAddresses, "L", "Ports to allow local forwarding for")
-	flag.Var(&reverseAddresses, "R", "Ports to allow reverse forwarding for")
-
-	flag.StringVar(&hostKeyPath, "hostkey", hostKeyPath, "Path to the host key")
-
-	flag.Parse()
-
+	HostKeyPath: "hostkey.pem",
 }
 
-var cli *client.Client
+var config = &docker.ContainerExecConfig{
+	Client: nil, // see below
+
+	DockerLabelUser:     "de.tkw1536.proxyssh.user",
+	DockerLabelAuthFile: "de.tkw1536.proxyssh.authfile",
+
+	ContainerShell: "/bin/sh",
+}
+
+func init() {
+	defer flag.Parse()
+
+	legal.RegisterFlag(nil)
+	options.RegisterFlags(nil, true)
+
+	flag.StringVar(&config.DockerLabelUser, "userlabel", config.DockerLabelUser, "Label to find docker files by")
+	flag.StringVar(&config.DockerLabelAuthFile, "keylabel", config.DockerLabelAuthFile, "Label to find the authorized_keys file by")
+
+	flag.StringVar(&config.ContainerShell, "shell", config.ContainerShell, "Shell to execute within the container")
+}
 
 func init() {
 	var err error
-	cli, err = client.NewEnvClient()
+	config.Client, err = client.NewEnvClient()
 	if err != nil {
 		panic(err)
 	}
-	cli.NegotiateAPIVersion(context.Background())
+	config.Client.NegotiateAPIVersion(context.Background())
 }

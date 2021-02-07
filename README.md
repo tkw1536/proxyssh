@@ -3,7 +3,7 @@
 ![CI Status](https://github.com/tkw1536/proxyssh/workflows/CI/badge.svg)
 
 
-A golang package based on https://github.com/gliderlabs/ssh that enables easily running commands via ssh. 
+A golang package based on https://github.com/gliderlabs/ssh that enables easily creating different ssh servers. 
 Also includes Docker support. 
 
 ## Use Cases

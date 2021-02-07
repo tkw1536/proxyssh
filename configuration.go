@@ -1,10 +1,8 @@
-// Package server implements a common Proxy SSH Server
-package server
+package proxyssh
 
 import (
 	"github.com/gliderlabs/ssh"
-	"github.com/pkg/errors"
-	"github.com/tkw1536/proxyssh"
+	"github.com/tkw1536/proxyssh/server"
 	"github.com/tkw1536/proxyssh/utils"
 )
 
@@ -13,13 +11,8 @@ type Configuration interface {
 	Apply(logger utils.Logger, server *ssh.Server) error
 }
 
-// Handler represents a Configuration that provides a handler.
-type Handler interface {
-	Handle(logger utils.Logger, session ssh.Session) (proxyssh.Process, error)
-}
-
 // NewServer makes a new server, applies the appropriate configurations, and then applies the options.
-func NewServer(logger utils.Logger, options Options, configurations ...Configuration) (*ssh.Server, error) {
+func NewServer(logger utils.Logger, options *server.Options, configurations ...Configuration) (*ssh.Server, error) {
 	server := &ssh.Server{}
 
 	for _, config := range configurations {
@@ -28,7 +21,8 @@ func NewServer(logger utils.Logger, options Options, configurations ...Configura
 		}
 	}
 
-	// Apply the options after the configuration so that options like 'unsafe' work properly.
+	// Apply the options after the configurations.
+	// This ensures that options like 'unsafe' work properly.
 	if err := ApplyConfiguration(logger, server, options); err != nil {
 		return nil, err
 	}
@@ -60,22 +54,5 @@ func ApplyConfiguration(logger utils.Logger, server *ssh.Server, configuration C
 		}
 	}
 
-	return nil
-}
-
-// ErrHandlerAlreadySet is returned by ApplyHandler when a handler is already applies to the server.
-var ErrHandlerAlreadySet = errors.New("ApplyHandler: Handler already set")
-
-// ApplyHandler applies a handler to a server by setting server.Handler.
-// When server.Handler is already set, returns an error.
-func ApplyHandler(logger utils.Logger, server *ssh.Server, handler Handler) error {
-
-	if server.Handler != nil {
-		return ErrHandlerAlreadySet
-	}
-
-	server.Handler = proxyssh.HandleProcess(logger, func(session ssh.Session) (proxyssh.Process, error) {
-		return handler.Handle(logger, session)
-	})
 	return nil
 }
