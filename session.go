@@ -8,7 +8,9 @@ import (
 
 	"github.com/gliderlabs/ssh"
 	"github.com/pkg/errors"
+	"github.com/tkw1536/proxyssh/internal/copy"
 	"github.com/tkw1536/proxyssh/internal/lock"
+	"github.com/tkw1536/proxyssh/internal/term"
 	"github.com/tkw1536/proxyssh/logging"
 )
 
@@ -16,6 +18,8 @@ import (
 type Session struct {
 	ssh.Session                // the underlying ssh.session
 	Logger      logging.Logger // for logging
+
+	detector logging.MemoryLeakDetector // for keeping track of memory leak
 
 	Process Process // the process that this session should execute
 
@@ -31,8 +35,8 @@ type Process interface {
 	// all methods in this interface are called at most once.
 
 	// Init initializes this process
-	Init(ctx context.Context, isPty bool) error
-	Start(Term string, resizeChan <-chan WindowSize, isPty bool) (*os.File, error)
+	Init(ctx context.Context, detector logging.MemoryLeakDetector, isPty bool) error
+	Start(detector logging.MemoryLeakDetector, Term string, resizeChan <-chan WindowSize, isPty bool) (*os.File, error)
 
 	// Input / Output Streams
 	Stdout() (io.ReadCloser, error)
@@ -40,16 +44,14 @@ type Process interface {
 	Stdin() (io.WriteCloser, error)
 
 	// Wait waits for the process and returns the exit code
-	Wait() (int, error)
+	Wait(detector logging.MemoryLeakDetector) (int, error)
 
 	// Cleanup is called to cleanup this process, usually to kill it.
 	Cleanup() (killed bool)
 }
 
 // WindowSize represents the size of the window
-type WindowSize struct {
-	Height, Width uint16
-}
+type WindowSize = term.ResizeEvent
 
 var errAlreadyStarted = errors.New("Session.Run(): Already started. ")
 
@@ -63,14 +65,22 @@ func (c *Session) Run() error {
 		return errAlreadyStarted
 	}
 
+	c.detector = logging.NewMemoryLeakDetector()
+	if logging.MemoryLeakEnabled {
+		c.fmtLog("memory_leak_detector_enabled")
+	}
+
 	if err := c.start(); err != nil {
-		err = errors.Wrap(err, "Failed to start session")
+		err = errors.Wrap(err, "Failed to start process")
 		c.finalize(255, err)
 		return err
 	}
 
 	// if the user session disconnects, exit immediatly
+	c.detector.Add("session: context cancel")
 	go func() {
+		defer c.detector.Done("session: context cancel")
+
 		<-c.Context().Done()
 		c.finalize(255, nil)
 		return
@@ -83,12 +93,12 @@ func (c *Session) Run() error {
 }
 
 // start starts this session
-func (c *Session) start() (err error) {
+func (c *Session) start() error {
 
 	// initialize the process
 	_, _, isPty := c.Pty()
-	if err := c.Process.Init(c.Session.Context(), isPty); err != nil {
-		return err
+	if err := c.Process.Init(c.Session.Context(), c.detector, isPty); err != nil {
+		return errors.Wrap(err, "Failed to initialize process")
 	}
 
 	// start either a regular or pty session
@@ -104,9 +114,12 @@ func (c *Session) startRegular() error {
 	// create a pipe for stdout
 	stdout, err := c.Process.Stdout()
 	if err != nil {
-		return errors.Wrap(err, "process.Stdout() returned error")
+		return errors.Wrap(err, "Failed to connect to STDOUT")
 	}
+
+	c.detector.Add("session: stdout")
 	go func() {
+		defer c.detector.Done("session: stdout")
 		defer stdout.Close()
 		io.Copy(c, stdout)
 	}()
@@ -114,9 +127,11 @@ func (c *Session) startRegular() error {
 	// create a pipe for stderr
 	stderr, err := c.Process.Stderr()
 	if err != nil {
-		return errors.Wrap(err, "cmd.Stderr() returned error")
+		return errors.Wrap(err, "Failed to connect to STDERR")
 	}
+	c.detector.Add("session: stderr")
 	go func() {
+		defer c.detector.Done("session: stderr")
 		defer stderr.Close()
 		io.Copy(c.Stderr(), stderr)
 	}()
@@ -124,15 +139,18 @@ func (c *Session) startRegular() error {
 	// create a pipe for stdin
 	stdin, err := c.Process.Stdin()
 	if err != nil {
-		return errors.Wrap(err, "cmd.Stdin() returned error")
+		return errors.Wrap(err, "Failed to connect to STDIN")
 	}
+
+	c.detector.Add("session: stdin")
 	go func() {
+		defer c.detector.Done("session: stdin")
 		defer stdin.Close()
 		io.Copy(stdin, c)
 	}()
 
 	// and start the command
-	_, err = c.Process.Start("", nil, false)
+	_, err = c.Process.Start(c.detector, "", nil, false)
 	return err
 }
 
@@ -143,7 +161,9 @@ func (c *Session) startPty() error {
 
 	// create a channel for resizing the window
 	resizeChan := make(chan WindowSize)
+	c.detector.Add("session: winCh")
 	go func() {
+		defer c.detector.Done("session: winCh")
 		for win := range winCh {
 			// c.fmtLog("term_resize %d %d", win.Height, win.Width)
 			resizeChan <- WindowSize{
@@ -154,24 +174,34 @@ func (c *Session) startPty() error {
 		close(resizeChan)
 	}()
 
-	f, err := c.Process.Start(ptyReq.Term, resizeChan, true)
+	f, err := c.Process.Start(c.detector, ptyReq.Term, resizeChan, true)
 	if err != nil {
-		err = errors.Wrap(err, "pty.Start() returned error")
 		return err
 	}
 	c.fmtLog("pty_start_success")
 
-	go io.Copy(f, c) // input
-	go io.Copy(c, f) // output
+	c.detector.Add("session: input")
+	go func() {
+		defer c.detector.Done("session: input")
+		io.Copy(f, c) // input
+	}()
+
+	c.detector.Add("session: output")
+	go func() {
+		defer c.detector.Done("session: output")
+		copy.WithContext(c.Session.Context(), c, f) // output
+	}()
 
 	return nil
 }
 
 // wait waits for this session to finish
 func (c *Session) wait() (code int, err error) {
-	code, err = c.Process.Wait()
+	code, err = c.Process.Wait(c.detector)
 	if err == nil {
 		c.fmtLog("command_return %d", code)
+	} else {
+		c.fmtLog("command_return_fail %s", err)
 	}
 	return
 }
@@ -198,12 +228,18 @@ func (c *Session) finalize(status int, err error) {
 	}
 	c.Exit(status)
 
+	// close the session
+	c.Close()
+	c.CloseWrite()
+
 	// kill the process in the background
 	go c.killProcess()
+
+	// trigger the leak detector
+	go c.detector.Finish(c.Logger, c.Session, 0)
 }
 
-// killProcess tries to kill the process.
-// silences all errors
+// killProcess attempts to kill the underlying process.
 func (c *Session) killProcess() {
 	res := c.Process.Cleanup()
 	if res {

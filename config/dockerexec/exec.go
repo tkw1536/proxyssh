@@ -4,16 +4,16 @@ import (
 	"context"
 	"io"
 	"os"
-	"runtime"
 	"strings"
 	"sync"
 
-	"github.com/creack/pty"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/tkw1536/proxyssh"
+	"github.com/tkw1536/proxyssh/internal/copy"
 	"github.com/tkw1536/proxyssh/internal/term"
+	"github.com/tkw1536/proxyssh/logging"
 )
 
 // Code is this file is roughly adapted from https://github.com/docker/cli/blob/master/cli/command/container/exec.go
@@ -74,12 +74,10 @@ type ContainerExecProcess struct {
 	containerID string
 	config      types.ExecConfig
 
-	// external streams
-	stdout, stderr io.ReadCloser
-	stdin          io.WriteCloser
-
 	// internal streams
-	stdoutTerm, stderrTerm, stdinTerm, ptyTerm, ttyTerm *term.Terminal
+	stdoutTerm, stderrTerm, stdinTerm *term.Terminal
+
+	terminal *term.Pair
 
 	// state
 	execID string
@@ -104,7 +102,7 @@ func (cep *ContainerExecProcess) String() string {
 }
 
 // Init initializes this EngineProcess
-func (cep *ContainerExecProcess) Init(ctx context.Context, isTerm bool) error {
+func (cep *ContainerExecProcess) Init(ctx context.Context, detector logging.MemoryLeakDetector, isTerm bool) error {
 	cep.ctx = ctx
 	if isTerm {
 		cep.config.Tty = true
@@ -115,127 +113,63 @@ func (cep *ContainerExecProcess) Init(ctx context.Context, isTerm bool) error {
 }
 
 func (cep *ContainerExecProcess) initPlain() error {
-	var err error
-
-	cep.stdout, cep.stdoutTerm, err = term.NewWritePipe()
-	if err != nil {
-		return err
-	}
-
-	cep.stderr, cep.stderrTerm, err = term.NewWritePipe()
-	if err != nil {
-		return err
-	}
-
-	cep.stdinTerm, cep.stdin, err = term.NewReadPipe()
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
 func (cep *ContainerExecProcess) initTerm() error {
-	// create a new pty
-	pty, tty, err := pty.Open()
-	if err != nil {
+	cep.terminal = &term.Pair{}
+	if err := cep.terminal.Open(true); err != nil {
 		return err
 	}
 
-	// store the pty and tty use
-	cep.ptyTerm = term.GetTerminal(pty)
-	cep.ttyTerm = term.GetTerminal(tty)
-
-	// standard output is the tty
-	cep.stdout = tty
-	cep.stdoutTerm = term.GetTerminal(tty)
-
-	// standard input is the tty
-	cep.stdin = tty
-	cep.stdinTerm = term.GetTerminal(tty)
+	// set the input and output to terminals
+	cep.stdoutTerm = cep.terminal.InternalT()
+	cep.stdinTerm = cep.terminal.InternalT()
 
 	return nil
 }
 
 // Stdout returns a pipe to Stdout
-func (cep *ContainerExecProcess) Stdout() (io.ReadCloser, error) {
-	return cep.stdout, nil
+func (cep *ContainerExecProcess) Stdout() (stdout io.ReadCloser, err error) {
+	stdout, cep.stdoutTerm, err = term.NewWritePipe()
+	return
 }
 
 // Stderr returns a pipe to Stderr
-func (cep *ContainerExecProcess) Stderr() (io.ReadCloser, error) {
-	return cep.stderr, nil
+func (cep *ContainerExecProcess) Stderr() (stderr io.ReadCloser, err error) {
+	stderr, cep.stderrTerm, err = term.NewWritePipe()
+	return
 }
 
 // Stdin returns a pipe to Stdin
-func (cep *ContainerExecProcess) Stdin() (io.WriteCloser, error) {
-	return cep.stdin, nil
-}
-
-// setRawTerminals sets all the terminals to raw mode
-func (cep *ContainerExecProcess) setRawTerminals() error {
-	if err := cep.stdoutTerm.SetRawInput(); err != nil {
-		return err
-	}
-
-	if err := cep.stderrTerm.SetRawInput(); err != nil {
-		return err
-	}
-
-	if err := cep.stdoutTerm.SetRawOutput(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// restoreTerminals restores all the terminal modes
-func (cep *ContainerExecProcess) restoreTerminals() {
-	cep.restoreTerms.Do(func() {
-		cep.stdoutTerm.RestoreTerminal()
-		cep.stderrTerm.RestoreTerminal()
-		cep.stdinTerm.RestoreTerminal()
-
-		// this check has been adapted from upstream; for some reason they hang on specific platforms
-		if in := cep.stdinTerm.File(); in != nil && runtime.GOOS != "darwin" && runtime.GOOS != "windows" {
-			in.Close()
-		}
-	})
+func (cep *ContainerExecProcess) Stdin() (stdin io.WriteCloser, err error) {
+	cep.stdinTerm, stdin, err = term.NewReadPipe()
+	return
 }
 
 // Start starts this process
-func (cep *ContainerExecProcess) Start(Term string, resizeChan <-chan proxyssh.WindowSize, isPty bool) (*os.File, error) {
+func (cep *ContainerExecProcess) Start(detector logging.MemoryLeakDetector, Term string, resizeChan <-chan proxyssh.WindowSize, isPty bool) (*os.File, error) {
 	if isPty {
 		cep.config.Env = append(cep.config.Env, "TERM="+Term)
 
-		// start resizing the terminal
-		go func() {
-			for size := range resizeChan {
-				cep.ptyTerm.ResizeTo(size.Height, size.Width)
-
-				cep.client.ContainerExecResize(cep.ctx, cep.execID, types.ResizeOptions{
-					Height: uint(size.Height),
-					Width:  uint(size.Width),
-				})
-			}
-		}()
+		cep.terminal.HandleWith(resizeChan, func(size proxyssh.WindowSize) {
+			cep.client.ContainerExecResize(cep.ctx, cep.execID, types.ResizeOptions{
+				Height: uint(size.Height),
+				Width:  uint(size.Width),
+			})
+		})
 	}
 
 	// start streaming
-	if err := cep.execAndStream(isPty); err != nil {
+	if err := cep.execAndStream(detector, isPty); err != nil {
 		return nil, err
 	}
 
 	// and return
-	return cep.ptyTerm.File(), nil
+	return cep.terminal.External(), nil
 }
 
-func (cep *ContainerExecProcess) execAndStream(isPty bool) error {
-
-	// set all the streams into raw mode
-	if err := cep.setRawTerminals(); err != nil {
-		return err
-	}
+func (cep *ContainerExecProcess) execAndStream(detector logging.MemoryLeakDetector, isPty bool) error {
 
 	// create the exec
 	res, err := cep.client.ContainerExecCreate(cep.ctx, cep.containerID, cep.config)
@@ -256,10 +190,12 @@ func (cep *ContainerExecProcess) execAndStream(isPty bool) error {
 	cep.inputDoneChan = make(chan struct{})
 
 	// read output
+	detector.Add("Read Output")
 	go func() {
+		defer detector.Done("Read Output")
 		if isPty {
 			_, err = io.Copy(cep.stdoutTerm.File(), conn.Reader)
-			cep.restoreTerminals()
+			cep.terminal.Restore()
 		} else {
 			_, err = stdcopy.StdCopy(cep.stdoutTerm.File(), cep.stderrTerm.File(), conn.Reader)
 		}
@@ -269,8 +205,11 @@ func (cep *ContainerExecProcess) execAndStream(isPty bool) error {
 	}()
 
 	// write input
+	detector.Add("Write Input")
 	go func() {
-		io.Copy(conn.Conn, cep.stdinTerm.File())
+		defer detector.Done("Write Input")
+
+		copy.WithContext(cep.ctx, conn.Conn, cep.stdinTerm.File())
 		conn.CloseWrite()
 		close(cep.inputDoneChan)
 	}()
@@ -280,7 +219,7 @@ func (cep *ContainerExecProcess) execAndStream(isPty bool) error {
 
 // waitStreams waits for the streams to finish
 func (cep *ContainerExecProcess) waitStreams() error {
-	defer cep.restoreTerminals()
+	defer cep.terminal.Close()
 
 	select {
 	case err := <-cep.outputErrChan:
@@ -298,10 +237,13 @@ func (cep *ContainerExecProcess) waitStreams() error {
 }
 
 // Wait waits for the process and returns the exit code
-func (cep *ContainerExecProcess) Wait() (code int, err error) {
+func (cep *ContainerExecProcess) Wait(detector logging.MemoryLeakDetector) (code int, err error) {
 
-	// wait for the streams to close
-	if err := cep.waitStreams(); err != nil {
+	// wait for streams to close
+	detector.Add("Wait")
+	err = cep.waitStreams()
+	detector.Done("Wait")
+	if err != nil {
 		return 0, err
 	}
 
@@ -315,16 +257,8 @@ func (cep *ContainerExecProcess) Wait() (code int, err error) {
 
 // Cleanup cleans up this process, typically to kill it.
 func (cep *ContainerExecProcess) Cleanup() (killed bool) {
-
-	if cep.ptyTerm != nil { // cleanup the pty
-		cep.ptyTerm.Close()
-		cep.ptyTerm = nil
-	}
-
-	if cep.ttyTerm != nil {
-		cep.ttyTerm.Close()
-		cep.ttyTerm = nil
-	}
+	cep.terminal.UnhangHack()
+	cep.terminal.Close()
 
 	if cep.conn != nil { // cleanup the connection
 		cep.conn.Close()

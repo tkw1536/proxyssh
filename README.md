@@ -19,6 +19,25 @@ See the `cmd/exposshed` package.
 
 For a more detailed overall documentation, see the [godoc](https://pkg.go.dev/github.com/tkw1536/proxyssh). 
 
+## Tests
+
+This package comes with a tests suite as well as a builtin memory-leak detector.
+The tests can be run as any normal go test suite can:
+
+    go test ./...
+
+These tests require `docker-compose` and `/bin/bash` to be installed on the local machine.
+They furthermore require a network connection to download the `alpine` docker image during tests.
+It is also possible to skip any docker tests:
+
+    go test -short ./...
+
+The memory leak detector is not enabled by default and not used during the tests.
+By default, all code calling the memory leak detector is removed during compilation. 
+
+The detector can be enabled by adding the `leak` go build tag. 
+When enabled, all executables output memory leak messages for every connection to the console.
+
 ## Dockerfiles
 
 This repository contains Dockerfiles for all of the examples, called `docker/${example}/Dockerfile`. 

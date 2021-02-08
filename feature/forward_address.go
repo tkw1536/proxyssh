@@ -68,6 +68,10 @@ type NetworkAddressListVar struct {
 
 // String turns this NetworkAddressListVar into a comma-seperated list of network addresses.
 func (p *NetworkAddressListVar) String() string {
+	if p.Addresses == nil {
+		return ""
+	}
+
 	ports := make([]string, len(*p.Addresses))
 	for i, ph := range *p.Addresses {
 		ports[i] = ph.String()

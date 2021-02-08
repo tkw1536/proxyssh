@@ -11,6 +11,8 @@ import (
 	"github.com/creack/pty"
 	"github.com/pkg/errors"
 	"github.com/tkw1536/proxyssh"
+	"github.com/tkw1536/proxyssh/internal/term"
+	"github.com/tkw1536/proxyssh/logging"
 )
 
 // NewSystemProcess creates a new system process
@@ -26,11 +28,12 @@ type SystemProcess struct {
 	command string
 	args    []string
 
-	Cmd *exec.Cmd
+	cmd      *exec.Cmd
+	terminal *term.Pair
 }
 
 // Init initializes this process
-func (sp *SystemProcess) Init(ctx context.Context, isPty bool) error {
+func (sp *SystemProcess) Init(ctx context.Context, detector logging.MemoryLeakDetector, isPty bool) error {
 	// exec.Command internally does use LookPath(), but doesn't return an error
 	// Instead we explicitly call LookPath() to intercept the error
 
@@ -40,69 +43,69 @@ func (sp *SystemProcess) Init(ctx context.Context, isPty bool) error {
 		return err
 	}
 
-	sp.Cmd = exec.Command(exe, sp.args...)
+	sp.cmd = exec.Command(exe, sp.args...)
 	return nil
 }
 
 // String turns ShellProcess into a string
 func (sp *SystemProcess) String() string {
-	if sp == nil || sp.Cmd == nil {
+	if sp == nil || sp.cmd == nil {
 		return ""
 	}
 
-	return strings.Join(append([]string{sp.Cmd.Path}, sp.Cmd.Args...), " ")
+	return strings.Join(append([]string{sp.cmd.Path}, sp.cmd.Args...), " ")
 }
 
 // Stdout returns a pipe to Stdout
 func (sp *SystemProcess) Stdout() (io.ReadCloser, error) {
-	return sp.Cmd.StdoutPipe()
+	return sp.cmd.StdoutPipe()
 }
 
 // Stderr returns a pipe to Stderr
 func (sp *SystemProcess) Stderr() (io.ReadCloser, error) {
-	return sp.Cmd.StderrPipe()
+	return sp.cmd.StderrPipe()
 }
 
 // Stdin returns a pipe to Stdin
 func (sp *SystemProcess) Stdin() (io.WriteCloser, error) {
-	return sp.Cmd.StdinPipe()
+	return sp.cmd.StdinPipe()
 }
 
 // Start starts this process
-func (sp *SystemProcess) Start(Term string, resizeChan <-chan proxyssh.WindowSize, isPty bool) (*os.File, error) {
+func (sp *SystemProcess) Start(detector logging.MemoryLeakDetector, Term string, resizeChan <-chan proxyssh.WindowSize, isPty bool) (*os.File, error) {
 	// not a tty => start the process and be done!
 	if !isPty {
-		return nil, sp.Cmd.Start()
+		return nil, sp.cmd.Start()
 	}
 
 	// add the terminal environment variable
-	sp.Cmd.Env = append(sp.Cmd.Env, fmt.Sprintf("TERM=%s", Term))
+	sp.cmd.Env = append(sp.cmd.Env, fmt.Sprintf("TERM=%s", Term))
 
 	// start the pty
-	f, err := pty.Start(sp.Cmd)
+	f, err := pty.Start(sp.cmd)
 	if err != nil {
 		return nil, err
 	}
 
-	// start tracking window size
-	go func() {
-		for size := range resizeChan {
-			pty.Setsize(f, &pty.Winsize{
-				Rows: size.Height,
-				Cols: size.Width,
-			})
-		}
-	}()
+	// use a new terminal
+	sp.terminal = &term.Pair{}
+	sp.terminal.Use(f)
+
+	// handle resize events on the terminal
+	sp.terminal.Handle(resizeChan)
 
 	// and return a function for this
-	return f, nil
+	return sp.terminal.External(), nil
 }
 
 // Wait waits for the process and returns the exit code
-func (sp *SystemProcess) Wait() (code int, err error) {
+func (sp *SystemProcess) Wait(detector logging.MemoryLeakDetector) (code int, err error) {
+
 	// wait for the command
-	err = sp.Cmd.Wait()
+	detector.Add("Wait")
+	err = sp.cmd.Wait()
 	code = 255
+	detector.Done("Wait")
 
 	// if we have a failure and it's not an exit code
 	// we need to return an error
@@ -113,14 +116,16 @@ func (sp *SystemProcess) Wait() (code int, err error) {
 	}
 
 	// return the exit code
-	code = sp.Cmd.ProcessState.ExitCode()
+	code = sp.cmd.ProcessState.ExitCode()
 	return code, nil
 }
 
 // Cleanup cleans up this process, typically killing it
 func (sp *SystemProcess) Cleanup() (killed bool) {
+	sp.terminal.Close()
+
 	// no process => return
-	if sp.Cmd.Process == nil {
+	if sp.cmd.Process == nil {
 		return true
 	}
 
@@ -130,8 +135,8 @@ func (sp *SystemProcess) Cleanup() (killed bool) {
 	}()
 
 	// kill the process, and prevent further attempts
-	if sp.Cmd.Process.Kill() == nil {
-		sp.Cmd.Process = nil
+	if sp.cmd.Process.Kill() == nil {
+		sp.cmd.Process = nil
 	}
 	return true
 }

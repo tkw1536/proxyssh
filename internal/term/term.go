@@ -3,6 +3,7 @@ package term
 
 import (
 	"os"
+	"sync"
 
 	"github.com/moby/term"
 )
@@ -61,6 +62,7 @@ type Terminal struct {
 	fd         uintptr
 	isTerminal bool
 
+	l     sync.RWMutex // l protects state
 	state *term.State
 }
 
@@ -95,6 +97,13 @@ func (t *Terminal) IsTerminal() bool {
 
 // SetRawInput puts t into raw input mode unless it is not a terminal
 func (t *Terminal) SetRawInput() (err error) {
+	if t == nil {
+		return nil
+	}
+
+	t.l.Lock()
+	defer t.l.Unlock()
+
 	if t == nil || !t.isTerminal || t.state != nil {
 		return nil
 	}
@@ -104,16 +113,31 @@ func (t *Terminal) SetRawInput() (err error) {
 
 // SetRawOutput puts t into raw output mode unless it is not a terminal
 func (t *Terminal) SetRawOutput() (err error) {
+	if t == nil {
+		return nil
+	}
+
+	t.l.Lock()
+	defer t.l.Unlock()
+
 	if t == nil || !t.isTerminal || t.state != nil {
 		return nil
 	}
+
 	t.state, err = term.SetRawTerminalOutput(t.fd)
 	return
 }
 
 // RestoreTerminal restores the terminal to previous values
 func (t *Terminal) RestoreTerminal() error {
-	if t == nil || t.state == nil {
+	if t == nil {
+		return nil
+	}
+
+	t.l.Lock()
+	defer t.l.Unlock()
+
+	if t.state == nil {
 		return nil
 	}
 
