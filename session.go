@@ -65,7 +65,7 @@ func (c *Session) Run() error {
 		return errAlreadyStarted
 	}
 
-	c.detector = logging.NewMemoryLeakDetector()
+	c.detector = logging.NewLeakDetector()
 	if logging.MemoryLeakEnabled {
 		c.fmtLog("memory_leak_detector_enabled")
 	}
