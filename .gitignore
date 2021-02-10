@@ -2,3 +2,4 @@ hostkey.pem*
 /dockersshd
 /simplesshd
 /exposshed
+__*
