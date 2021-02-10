@@ -50,7 +50,7 @@ type Process interface {
 }
 
 // WindowSize represents the size of the window
-type WindowSize = term.ResizeEvent
+type WindowSize = term.Size
 
 var errAlreadyStarted = errors.New("Session.Run(): Already started. ")
 
@@ -182,7 +182,7 @@ func (c *Session) startPty() error {
 	c.detector.Add("session: input")
 	go func() {
 		defer c.detector.Done("session: input")
-		io.Copy(f, c) // input
+		io.Copy(f, c)
 	}()
 
 	c.detector.Add("session: output")

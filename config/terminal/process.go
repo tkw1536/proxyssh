@@ -1,10 +1,12 @@
 package terminal
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/tkw1536/proxyssh"
 	"github.com/tkw1536/proxyssh/internal/term"
@@ -18,6 +20,7 @@ type REPLProcess struct {
 	Prompt         string
 	Loop           func(ctx context.Context, w io.Writer, read string) (exit bool, code int)
 
+	term.Pipes
 	terminal *term.Pair
 
 	workerContextCancel func() // called to cancel the worker context
@@ -58,6 +61,9 @@ func (repl *REPLProcess) Wait(detector logging.MemoryLeakDetector) (code int, er
 func (repl *REPLProcess) Cleanup() (killed bool) {
 	repl.workerContextCancel()
 
+	// close the pipes
+	repl.ClosePipes()
+
 	// unhang the Close() method and exit!
 	repl.terminal.UnhangHack()
 	repl.terminal.Close()
@@ -70,29 +76,74 @@ func (repl *REPLProcess) String() string {
 	return "REPLProcess"
 }
 
-// Stdout returns a pipe to Stdout
-func (repl *REPLProcess) Stdout() (io.ReadCloser, error) {
-	return nil, errNotATTY
-}
-
-// Stderr returns a pipe to Stderr
-func (repl *REPLProcess) Stderr() (io.ReadCloser, error) {
-	return nil, errNotATTY
-}
-
-// Stdin returns a pipe to Stdin
-func (repl *REPLProcess) Stdin() (io.WriteCloser, error) {
-	return nil, errNotATTY
-}
-
 var errNotATTY = errors.New("tty was not allocated")
 
 // Start starts this process
 func (repl *REPLProcess) Start(detector logging.MemoryLeakDetector, Term string, resizeChan <-chan proxyssh.WindowSize, isPty bool) (*os.File, error) {
 	if !isPty {
-		return nil, errNotATTY
+		return nil, repl.startPipes(detector)
 	}
 	return repl.startPty(detector, Term, resizeChan, isPty)
+}
+
+func (repl *REPLProcess) startPipes(detector logging.MemoryLeakDetector) error {
+
+	// make a context for the terminal loop
+	var ctx context.Context
+	ctx, repl.workerContextCancel = context.WithCancel(context.Background())
+
+	detector.Add("terminal: pipes loop")
+	go repl.runLoopPipes(ctx, detector)
+
+	return nil
+}
+
+func (repl *REPLProcess) runLoopPipes(ctx context.Context, detector logging.MemoryLeakDetector) {
+	defer detector.Done("terminal: pipes loop")
+
+	// isCancelled checks if the context has been canceled
+	isCancelled := func() bool {
+		select {
+		case <-ctx.Done():
+			return true
+		default:
+			return false
+		}
+	}
+
+	io.WriteString(repl.StdoutPipe, repl.WelcomeMessage+"\n")
+
+	buf := bufio.NewReader(repl.StdinPipe)
+	for !isCancelled() {
+		io.WriteString(repl.StdoutPipe, repl.Prompt)
+
+		line, err := buf.ReadString('\n')
+		line = strings.TrimRight(line, "\n")
+		if err == io.EOF {
+			break
+		}
+
+		// io => exit 255
+		if err != nil {
+			repl.exitCode = 255
+			break
+		}
+
+		// something went wrong while reading => 255
+		if err != nil {
+			repl.exitCode = 255
+			break
+		}
+
+		// do the loop code
+		exit, code := repl.Loop(ctx, repl.StdoutPipe, line)
+		if exit {
+			repl.exitCode = code
+			break
+		}
+	}
+
+	defer close(repl.loopWaiter)
 }
 
 //

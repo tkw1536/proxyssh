@@ -65,6 +65,7 @@ func NewContainerExecProcess(client client.APIClient, containerID string, comman
 
 // ContainerExecProcess represents a process running inside a docker engine
 type ContainerExecProcess struct {
+
 	// environment
 	client client.APIClient
 	ctx    context.Context
@@ -74,8 +75,8 @@ type ContainerExecProcess struct {
 	config      types.ExecConfig
 
 	// internal streams
-	stdout, stderr, stdin *os.File   // used in non-tty mode
-	terminal              *term.Pair // used in tty mode
+	term.Pipes
+	terminal *term.Pair // used in tty mode
 
 	// state
 	execID string
@@ -121,24 +122,6 @@ func (cep *ContainerExecProcess) initTerm() error {
 	}
 
 	return nil
-}
-
-// Stdout returns a pipe to Stdout
-func (cep *ContainerExecProcess) Stdout() (stdout io.ReadCloser, err error) {
-	stdout, cep.stdout, err = os.Pipe()
-	return
-}
-
-// Stderr returns a pipe to Stderr
-func (cep *ContainerExecProcess) Stderr() (stderr io.ReadCloser, err error) {
-	stderr, cep.stderr, err = os.Pipe()
-	return
-}
-
-// Stdin returns a pipe to Stdin
-func (cep *ContainerExecProcess) Stdin() (stdin io.WriteCloser, err error) {
-	cep.stdin, stdin, err = os.Pipe()
-	return
 }
 
 // Start starts this process
@@ -187,11 +170,12 @@ func (cep *ContainerExecProcess) execAndStream(detector logging.MemoryLeakDetect
 	detector.Add("dockerexec: output")
 	go func() {
 		defer detector.Done("dockerexec: output")
+
 		if isPty {
 			_, err = io.Copy(cep.terminal.Internal(), conn.Reader)
-			cep.terminal.Restore()
+			cep.terminal.RestoreMode()
 		} else {
-			_, err = stdcopy.StdCopy(cep.stdout, cep.stderr, conn.Reader)
+			_, err = stdcopy.StdCopy(cep.StdoutPipe, cep.StderrPipe, conn.Reader)
 		}
 
 		// close output and send error (if any)
@@ -206,7 +190,7 @@ func (cep *ContainerExecProcess) execAndStream(detector logging.MemoryLeakDetect
 		if isPty {
 			io.Copy(conn.Conn, cep.terminal.Internal())
 		} else {
-			io.Copy(conn.Conn, cep.stdin)
+			io.Copy(conn.Conn, cep.StdinPipe)
 		}
 		conn.CloseWrite()
 		close(cep.inputDoneChan)
@@ -255,6 +239,7 @@ func (cep *ContainerExecProcess) waitStreams() error {
 func (cep *ContainerExecProcess) Cleanup() (killed bool) {
 	cep.terminal.UnhangHack()
 	cep.terminal.Close()
+	cep.ClosePipes()
 
 	if cep.conn != nil { // cleanup the connection
 		cep.conn.Close()
