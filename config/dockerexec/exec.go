@@ -11,7 +11,6 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/tkw1536/proxyssh"
-	"github.com/tkw1536/proxyssh/internal/copy"
 	"github.com/tkw1536/proxyssh/internal/term"
 	"github.com/tkw1536/proxyssh/logging"
 )
@@ -75,9 +74,8 @@ type ContainerExecProcess struct {
 	config      types.ExecConfig
 
 	// internal streams
-	stdoutTerm, stderrTerm, stdinTerm *term.Terminal
-
-	terminal *term.Pair
+	stdout, stderr, stdin *os.File   // used in non-tty mode
+	terminal              *term.Pair // used in tty mode
 
 	// state
 	execID string
@@ -122,28 +120,24 @@ func (cep *ContainerExecProcess) initTerm() error {
 		return err
 	}
 
-	// set the input and output to terminals
-	cep.stdoutTerm = cep.terminal.InternalT()
-	cep.stdinTerm = cep.terminal.InternalT()
-
 	return nil
 }
 
 // Stdout returns a pipe to Stdout
 func (cep *ContainerExecProcess) Stdout() (stdout io.ReadCloser, err error) {
-	stdout, cep.stdoutTerm, err = term.NewWritePipe()
+	stdout, cep.stdout, err = os.Pipe()
 	return
 }
 
 // Stderr returns a pipe to Stderr
 func (cep *ContainerExecProcess) Stderr() (stderr io.ReadCloser, err error) {
-	stderr, cep.stderrTerm, err = term.NewWritePipe()
+	stderr, cep.stderr, err = os.Pipe()
 	return
 }
 
 // Stdin returns a pipe to Stdin
 func (cep *ContainerExecProcess) Stdin() (stdin io.WriteCloser, err error) {
-	cep.stdinTerm, stdin, err = term.NewReadPipe()
+	cep.stdin, stdin, err = os.Pipe()
 	return
 }
 
@@ -190,14 +184,14 @@ func (cep *ContainerExecProcess) execAndStream(detector logging.MemoryLeakDetect
 	cep.inputDoneChan = make(chan struct{})
 
 	// read output
-	detector.Add("Read Output")
+	detector.Add("dockerexec: output")
 	go func() {
-		defer detector.Done("Read Output")
+		defer detector.Done("dockerexec: output")
 		if isPty {
-			_, err = io.Copy(cep.stdoutTerm.File(), conn.Reader)
+			_, err = io.Copy(cep.terminal.Internal(), conn.Reader)
 			cep.terminal.Restore()
 		} else {
-			_, err = stdcopy.StdCopy(cep.stdoutTerm.File(), cep.stderrTerm.File(), conn.Reader)
+			_, err = stdcopy.StdCopy(cep.stdout, cep.stderr, conn.Reader)
 		}
 
 		// close output and send error (if any)
@@ -205,11 +199,15 @@ func (cep *ContainerExecProcess) execAndStream(detector logging.MemoryLeakDetect
 	}()
 
 	// write input
-	detector.Add("Write Input")
+	detector.Add("dockerexec: input")
 	go func() {
-		defer detector.Done("Write Input")
+		defer detector.Done("dockerexec: input")
 
-		copy.WithContext(cep.ctx, conn.Conn, cep.stdinTerm.File())
+		if isPty {
+			io.Copy(conn.Conn, cep.terminal.Internal())
+		} else {
+			io.Copy(conn.Conn, cep.stdin)
+		}
 		conn.CloseWrite()
 		close(cep.inputDoneChan)
 	}()
@@ -217,10 +215,27 @@ func (cep *ContainerExecProcess) execAndStream(detector logging.MemoryLeakDetect
 	return nil
 }
 
+// Wait waits for the process and returns the exit code
+func (cep *ContainerExecProcess) Wait(detector logging.MemoryLeakDetector) (code int, err error) {
+
+	// wait for streams to close
+	detector.Add("dockerexec: wait")
+	err = cep.waitStreams()
+	detector.Done("dockerexec: wait")
+	if err != nil {
+		return 0, err
+	}
+
+	// inspect and get the actual exit code
+	resp, err := cep.client.ContainerExecInspect(cep.ctx, cep.execID)
+	if err == nil {
+		cep.exited = true
+	}
+	return resp.ExitCode, err
+}
+
 // waitStreams waits for the streams to finish
 func (cep *ContainerExecProcess) waitStreams() error {
-	defer cep.terminal.Close()
-
 	select {
 	case err := <-cep.outputErrChan:
 		return err
@@ -234,25 +249,6 @@ func (cep *ContainerExecProcess) waitStreams() error {
 	case <-cep.ctx.Done():
 		return cep.ctx.Err()
 	}
-}
-
-// Wait waits for the process and returns the exit code
-func (cep *ContainerExecProcess) Wait(detector logging.MemoryLeakDetector) (code int, err error) {
-
-	// wait for streams to close
-	detector.Add("Wait")
-	err = cep.waitStreams()
-	detector.Done("Wait")
-	if err != nil {
-		return 0, err
-	}
-
-	// inspect and get the actual exit code
-	resp, err := cep.client.ContainerExecInspect(cep.ctx, cep.execID)
-	if err == nil {
-		cep.exited = true
-	}
-	return resp.ExitCode, err
 }
 
 // Cleanup cleans up this process, typically to kill it.

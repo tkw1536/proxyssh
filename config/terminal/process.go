@@ -47,8 +47,8 @@ func (repl *REPLProcess) Init(ctx context.Context, detector logging.MemoryLeakDe
 
 // Wait waits for the process and returns the exit code.
 func (repl *REPLProcess) Wait(detector logging.MemoryLeakDetector) (code int, err error) {
-	detector.Add("Wait")
-	defer detector.Done("Wait")
+	detector.Add("terminal: Wait")
+	defer detector.Done("terminal: Wait")
 
 	<-repl.loopWaiter
 	return repl.exitCode, nil
@@ -113,7 +113,7 @@ func (repl *REPLProcess) startPty(detector logging.MemoryLeakDetector, Term stri
 	var ctx context.Context
 	ctx, repl.workerContextCancel = context.WithCancel(context.Background())
 
-	detector.Add("Terminal Loop")
+	detector.Add("terminal: pty loop")
 	go repl.runLoopPty(ctx, detector)
 
 	// and return the pair of the terminal
@@ -121,7 +121,7 @@ func (repl *REPLProcess) startPty(detector logging.MemoryLeakDetector, Term stri
 }
 
 func (repl *REPLProcess) runLoopPty(ctx context.Context, detector logging.MemoryLeakDetector) {
-	defer detector.Done("Terminal Loop")
+	defer detector.Done("terminal: pty loop")
 
 	// isCancelled checks if the context has been canceled
 	isCancelled := func() bool {

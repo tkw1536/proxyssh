@@ -8,7 +8,6 @@ import (
 
 	"github.com/gliderlabs/ssh"
 	"github.com/pkg/errors"
-	"github.com/tkw1536/proxyssh/internal/copy"
 	"github.com/tkw1536/proxyssh/internal/lock"
 	"github.com/tkw1536/proxyssh/internal/term"
 	"github.com/tkw1536/proxyssh/logging"
@@ -189,7 +188,7 @@ func (c *Session) startPty() error {
 	c.detector.Add("session: output")
 	go func() {
 		defer c.detector.Done("session: output")
-		copy.WithContext(c.Session.Context(), c, f) // output
+		io.Copy(c, f)
 	}()
 
 	return nil
@@ -227,10 +226,6 @@ func (c *Session) finalize(status int, err error) {
 		c.fmtLog("session_exit %d %s", status, err.Error())
 	}
 	c.Exit(status)
-
-	// close the session
-	c.Close()
-	c.CloseWrite()
 
 	// kill the process in the background
 	go c.killProcess()

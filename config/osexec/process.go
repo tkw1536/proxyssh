@@ -102,10 +102,10 @@ func (sp *SystemProcess) Start(detector logging.MemoryLeakDetector, Term string,
 func (sp *SystemProcess) Wait(detector logging.MemoryLeakDetector) (code int, err error) {
 
 	// wait for the command
-	detector.Add("Wait")
+	detector.Add("osexec: Wait")
 	err = sp.cmd.Wait()
 	code = 255
-	detector.Done("Wait")
+	detector.Done("osexec: Wait")
 
 	// if we have a failure and it's not an exit code
 	// we need to return an error
