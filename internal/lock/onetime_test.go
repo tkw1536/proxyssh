@@ -1,10 +1,37 @@
 package lock
 
 import (
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"testing"
 )
+
+func ExampleOneTime() {
+
+	// create a new onetime
+	onetime := &OneTime{}
+	var someWork uint64
+
+	var wg sync.WaitGroup
+	wg.Add(10)
+	for i := 0; i < 10; i++ {
+		go func() {
+			defer wg.Done()
+
+			// if we can't lock, don't do any more work
+			if !onetime.Lock() {
+				return
+			}
+
+			atomic.AddUint64(&someWork, 1)
+		}()
+	}
+	wg.Wait()
+
+	fmt.Println(someWork)
+	// Output: 1
+}
 
 func TestOneTime_Lock(t *testing.T) {
 	onetime := &OneTime{} // object being tested

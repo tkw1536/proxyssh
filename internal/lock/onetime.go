@@ -1,4 +1,4 @@
-// Package lock provides OneTime
+// Package lock provides various locking utilities.
 package lock
 
 import (
@@ -28,7 +28,7 @@ import (
 type OneTime struct {
 	noCopy noCopy
 
-	state uint32
+	locked uint32 // 1 when locked, 0 when not
 }
 
 // Lock attempts to aquire this lock and returns if it was successfull.
@@ -38,22 +38,19 @@ func (ol *OneTime) Lock() bool {
 
 	// One could use a mutex and a boolean variable here.
 	// However that is slow; instead we can use the atomic package to CompareAndSwap.
-	//
-	// Because this is a very special low-level operation, we are explicitly ignoring the atomic package warning
-	// to not use it.
 
-	// At init time ol.state will be 0.
-	// A locked state is indicated by a 1.
-	// atom.CompareAndSwap performs the swapping process
-	// and also checks if the lock was open before.
-	//
-	// Since most of the time we have already locked the state
-	// (and thus only need to return false) this turns out to be
-	// the fastest.
-	//
-	// This has the side-effect that the call can be efficiently inlined.
+	return atomic.CompareAndSwapUint32(&ol.locked, 0, 1)
+}
 
-	return atomic.CompareAndSwapUint32(&ol.state, 0, 1)
+// Do attempts to lock ol and calls f() when successfull.
+// Other calls to Do() or Lock() may return before f has returned.
+func (ol *OneTime) Do(f func()) bool {
+	if !ol.Lock() {
+		return false
+	}
+
+	f()
+	return true
 }
 
 // noCopy marks an object to not be copied.
