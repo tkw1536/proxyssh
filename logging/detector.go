@@ -4,7 +4,10 @@ import (
 	"fmt"
 	"runtime"
 	"sync"
+	"sync/atomic"
 	"time"
+
+	"github.com/tkw1536/proxyssh/internal/lock"
 )
 
 // MemoryLeakDetectorInterface represents a Memory Leak Detector.
@@ -31,12 +34,11 @@ type MemoryLeakDetectorInterface interface {
 	Done(name string)
 
 	// Finish checks if all calls to Add() have been undone by a call to Done().
+	// It should be called syncronously.
 	//
-	// If this is not the case within 'timeout', it prints to logger an appropriate error message.
+	// If this is not the case within MemoryLeakTimeout, it prints to logger an appropriate error message.
 	// If this is the case, it prints a short message confirming that the leak check completed.
-	//
-	// When timeout is 0, uses MemoryLeakTimeout.
-	Finish(logger Logger, s LogSessionOrContext, timeout time.Duration)
+	Finish(logger Logger, s LogSessionOrContext)
 }
 
 // the implementation of MemoryLeakDetector fullfills the LeakDetector interface
@@ -52,6 +54,36 @@ func init() {
 
 // MemoryLeakTimeout is the default used by the memory detector to trigger.
 const MemoryLeakTimeout time.Duration = time.Second
+
+// leakDetectorState containts a global leak detector state.
+// It should be accessed using sync/atomic calls only.
+var leakDetectorState struct {
+	Success, Failure uint64 // multiple counter
+
+	workers lock.WorkGroup // ongoing calls to any locker
+}
+
+// ResetGlobalLeakDetectorStats resets the stats tracker used for the global leak detector.
+func ResetGlobalLeakDetectorStats() {
+	leakDetectorState.workers.Lock()
+	defer leakDetectorState.workers.Unlock()
+
+	leakDetectorState.workers.Wait()
+
+	atomic.StoreUint64(&leakDetectorState.Success, 0)
+	atomic.StoreUint64(&leakDetectorState.Failure, 0)
+}
+
+// GetGlobalLeakDetectorStats gets statistics about global leak detector calls.
+// Blocks until a leak detector is available.
+func GetGlobalLeakDetectorStats() (success, failure uint64) {
+	leakDetectorState.workers.Lock()
+	defer leakDetectorState.workers.Unlock()
+
+	leakDetectorState.workers.Wait()
+
+	return atomic.LoadUint64(&leakDetectorState.Success), atomic.LoadUint64(&leakDetectorState.Failure)
+}
 
 //
 //  Enabled Memory Leak Detector
@@ -90,31 +122,35 @@ func (d *MemoryLeakDetectorOn) Done(name string) {
 }
 
 // Finish implements MemoryLeakDetectorInterface.Finish.
-func (d *MemoryLeakDetectorOn) Finish(logger Logger, s LogSessionOrContext, timeout time.Duration) {
+func (d *MemoryLeakDetectorOn) Finish(logger Logger, s LogSessionOrContext) {
+	// inform the global state that we are adding more work!
+	leakDetectorState.workers.Add(1)
 
-	if timeout == 0 {
-		timeout = MemoryLeakTimeout
-	}
-
-	waiter := make(chan struct{})
 	go func() {
-		defer close(waiter)
-		d.wg.Wait()
-	}()
+		defer leakDetectorState.workers.Done()
 
-	select {
-	case <-waiter: /* everything ok */
-		d.unfire(logger, s)
-	case <-time.After(MemoryLeakTimeout): /* timeout fired, group didn't exit */
-		d.fire(logger, s)
-	}
+		waiter := make(chan struct{})
+		go func() {
+			defer close(waiter)
+			d.wg.Wait()
+		}()
+
+		select {
+		case <-waiter: /* everything ok */
+			d.unfire(logger, s)
+		case <-time.After(MemoryLeakTimeout): /* timeout fired, group didn't exit */
+			d.fire(logger, s)
+		}
+	}()
 }
 
 func (d *MemoryLeakDetectorOn) unfire(logger Logger, s LogSessionOrContext) {
+	atomic.AddUint64(&leakDetectorState.Success, 1)
 	FmtSSHLog(logger, s, "leak_ok")
 }
 
 func (d *MemoryLeakDetectorOn) fire(logger Logger, s LogSessionOrContext) {
+	atomic.AddUint64(&leakDetectorState.Failure, 1)
 	FmtSSHLog(logger, s, "leak_fail")
 	d.m.Range(func(k, v interface{}) bool {
 		logger.Printf("Leak Detector: %s (%q)", v, k)
@@ -137,4 +173,4 @@ func (d MemoryLeakDetectorOff) Add(name string) {}
 func (d MemoryLeakDetectorOff) Done(name string) {}
 
 // Finish implements MemoryLeakDetectorInterface.Finish.
-func (d MemoryLeakDetectorOff) Finish(logger Logger, s LogSessionOrContext, timeout time.Duration) {}
+func (d MemoryLeakDetectorOff) Finish(logger Logger, s LogSessionOrContext) {}

@@ -214,10 +214,13 @@ func (c *Session) finalize(status int, err error) {
 		return
 	}
 
-	// write error message to console
+	// write error detection code
 	if err != nil {
 		io.WriteString(c.Stderr(), err.Error()+"\n")
 	}
+
+	// trigger the leak detector
+	c.detector.Finish(c.Logger, c.Session)
 
 	// mark that we are finalized, and return
 	if err == nil {
@@ -229,9 +232,6 @@ func (c *Session) finalize(status int, err error) {
 
 	// kill the process in the background
 	go c.killProcess()
-
-	// trigger the leak detector
-	go c.detector.Finish(c.Logger, c.Session, 0)
 }
 
 // killProcess attempts to kill the underlying process.
