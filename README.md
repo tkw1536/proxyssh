@@ -40,7 +40,7 @@ When enabled, all executables output memory leak messages for every connection t
 
 ## Dockerfiles
 
-This repository contains Dockerfiles for all of the examples, called `docker/${example}/Dockerfile`. 
+This repository contains Dockerfiles for all of the examples, called `cmd/${example}/Dockerfile`. 
 
 These are available as the GitHub Packages [dockersshd](https://github.com/users/tkw1536/packages/container/package/dockersshd), [simplesshd](https://github.com/users/tkw1536/packages/container/package/simplesshd) and [exposshed](https://github.com/users/tkw1536/packages/container/package/exposshed) respectively. 
 

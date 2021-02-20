@@ -42,4 +42,4 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Build '${{ matrix.dockerimage }}' docker image
-        run: docker build -f docker/dockersshd/Dockerfile -t ${{ matrix.dockerimage }}:latest .
+        run: docker build -f cmd/${{ matrix.dockerimage }}/Dockerfile -t ${{ matrix.dockerimage }}:latest .
