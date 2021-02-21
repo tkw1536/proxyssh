@@ -26,7 +26,6 @@ func TestConnectContainer(t *testing.T) {
 	integrationtest.RunComposeTest(configComposeTest, map[string]string{
 		"authorized_key": testutils.AuthorizedKeysString(testPublicKeyConfig) + "\n",
 	}, func(cli client.APIClient, findService func(name string) types.Container, stopService func(name string)) error {
-
 		// create a new server with this client
 		execTestConfig.Client = cli
 		testServer, _, cleanup := integrationtest.NewServer(nil, execTestConfig)
@@ -110,6 +109,8 @@ func TestConnectContainer(t *testing.T) {
 				}
 			})
 		}
+
+		integrationtest.AssertLeakDetector(t, len(tests))
 
 		return nil
 	})

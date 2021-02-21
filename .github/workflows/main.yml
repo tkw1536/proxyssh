@@ -16,7 +16,7 @@ jobs:
         - uses: actions/checkout@v2
         - uses: actions/setup-go@v2
         - name: Run 'go test'
-          run: go test ./...
+          run: go test -tags=leak ./...
   build:
     runs-on: ubuntu-latest
     steps:
@@ -28,6 +28,11 @@ jobs:
         run: |
           export PATH=$PATH:$(go env GOPATH)/bin
           go generate ./...
+      - name: Build executables (with leak)
+        run: |
+          go build -tags=leak ./cmd/dockersshd
+          go build -tags=leak ./cmd/simplesshd
+          go build -tags=leak ./cmd/exposshed
       - name: Build executables
         run: |
           go build ./cmd/dockersshd

@@ -10,6 +10,8 @@ import (
 	"github.com/tkw1536/proxyssh/internal/lock"
 )
 
+// TODO: Test the leak detector; should be relatively simple to do
+
 // MemoryLeakDetectorInterface represents a Memory Leak Detector.
 // It is used to ensure that no concurrent processes have caused a memory leak within sessions.
 //
@@ -60,7 +62,7 @@ const MemoryLeakTimeout time.Duration = time.Second
 var leakDetectorState struct {
 	Success, Failure uint64 // multiple counter
 
-	workers lock.WorkGroup // ongoing calls to any locker
+	workers lock.WorkGroup // ongoing calls to any leak detector
 }
 
 // ResetGlobalLeakDetectorStats resets the stats tracker used for the global leak detector.

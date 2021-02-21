@@ -91,6 +91,8 @@ func TestCommand(t *testing.T) {
 			}
 		})
 	}
+
+	integrationtest.AssertLeakDetector(t, len(tests))
 }
 
 func TestCommandIsKilled(t *testing.T) {
