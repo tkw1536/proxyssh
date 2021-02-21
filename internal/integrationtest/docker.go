@@ -2,7 +2,6 @@ package integrationtest
 
 import (
 	"context"
-	"io/ioutil"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -76,7 +75,7 @@ func RunComposeTest(config string, files map[string]string, testcode ComposeTest
 
 	// create a temporary directory to work in
 	// also setup deletion of the temporary directory after this test ends
-	tmpDir, err := ioutil.TempDir("", "docker-compose-test")
+	tmpDir, err := os.MkdirTemp("", "docker-compose-test")
 	if err != nil {
 		err = errors.Wrap(err, "Unable to create a temporary directory")
 		panic(err)
@@ -86,14 +85,14 @@ func RunComposeTest(config string, files map[string]string, testcode ComposeTest
 	// create a docker-compose yml and place in the content of the configuration.
 	// This file will be automatically deleted with everything else in the directory
 	dockerComposeYML := path.Join(tmpDir, "docker-compose.yml")
-	if ioutil.WriteFile(dockerComposeYML, []byte(strings.ReplaceAll(config, "	", "    ")), os.ModePerm); err != nil {
+	if os.WriteFile(dockerComposeYML, []byte(strings.ReplaceAll(config, "	", "    ")), os.ModePerm); err != nil {
 		err = errors.Wrap(err, "Unable to write docker-compose.yml")
 		panic(err)
 	}
 
 	// write out all the extra files
 	for filename, content := range files {
-		if err := ioutil.WriteFile(path.Join(tmpDir, filename), []byte(content), os.ModePerm); err != nil {
+		if err := os.WriteFile(path.Join(tmpDir, filename), []byte(content), os.ModePerm); err != nil {
 			err = errors.Wrap(err, "Unable to write file")
 			panic(err)
 		}

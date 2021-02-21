@@ -7,7 +7,6 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"io"
-	"io/ioutil"
 	"os"
 
 	"github.com/gliderlabs/ssh"
@@ -84,7 +83,7 @@ func loadHostKey(logger logging.Logger, key HostKey, path string) (err error) {
 	logger.Printf("load_hostkey %s %s", key.Algorithm(), path)
 
 	// read all the bytes from the file
-	privateKeyBytes, err := ioutil.ReadFile(path)
+	privateKeyBytes, err := os.ReadFile(path)
 	if err != nil {
 		err = errors.Wrap(err, "Unable to read private key bytes")
 		return

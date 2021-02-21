@@ -1,7 +1,6 @@
 package testutils
 
 import (
-	"io/ioutil"
 	"os"
 	"sync"
 	"testing"
@@ -19,7 +18,7 @@ func TestWriteTempFile(t *testing.T) {
 		t.Errorf("WriteTempFile() got path = '', want path != ''")
 	}
 
-	bytes, err := ioutil.ReadFile(path)
+	bytes, err := os.ReadFile(path)
 	if err != nil {
 		panic(err)
 	}

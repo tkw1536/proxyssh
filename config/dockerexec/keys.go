@@ -2,7 +2,7 @@ package dockerexec
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"strings"
 
 	"github.com/docker/docker/api/types"
@@ -52,7 +52,7 @@ func FindContainerKeys(cli client.APIClient, container types.Container, options 
 		}
 		defer content.Close()
 
-		bytes, err := ioutil.ReadAll(content)
+		bytes, err := io.ReadAll(content)
 		if err != nil {
 			continue
 		}

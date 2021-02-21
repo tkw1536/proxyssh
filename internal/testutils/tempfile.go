@@ -1,13 +1,12 @@
 package testutils
 
 import (
-	"io/ioutil"
 	"os"
 )
 
 // WriteTempFile writes content into a temporary file.
 //
-// Pattern is used to generate the filename of the file, it is passed on to "ioutil".Tempfile.
+// Pattern is used to generate the filename of the file, it is passed on to os.CreateTemp.
 // Content is written as a string into the file.
 //
 // This function returns a pair of (filepath, cleanup) where
@@ -23,7 +22,7 @@ import (
 // If something goes wrong during the creation of the temporary file, panic() is called.
 func WriteTempFile(pattern, content string) (filepath string, cleanup func()) {
 	// Create a temporary file
-	tmpFile, err := ioutil.TempFile("", pattern)
+	tmpFile, err := os.CreateTemp("", pattern)
 	if err != nil {
 		panic(err)
 	}

@@ -1,7 +1,7 @@
 package config
 
 import (
-	"io/ioutil"
+	"io"
 	"net"
 	"testing"
 
@@ -60,7 +60,7 @@ func TestPortForwardingForward(t *testing.T) {
 		defer cc.Close()
 
 		// read everything
-		out, err := ioutil.ReadAll(cc)
+		out, err := io.ReadAll(cc)
 		if err != nil {
 			t.Errorf("Unable to read from connection: %s", err)
 		}
@@ -134,7 +134,7 @@ func TestPortForwardingReverse(t *testing.T) {
 		defer cc.Close()
 
 		// read everything
-		out, err := ioutil.ReadAll(cc)
+		out, err := io.ReadAll(cc)
 		if err != nil {
 			t.Errorf("Unable to read from connection: %s", err)
 		}

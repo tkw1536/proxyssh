@@ -1,7 +1,7 @@
 package testutils
 
 import (
-	"io/ioutil"
+	"io"
 	"net"
 	"strconv"
 	"strings"
@@ -54,7 +54,7 @@ func TestTCPConstantTestResponse(t *testing.T) {
 			panic(err)
 		}
 
-		gotBytes, err := ioutil.ReadAll(conn)
+		gotBytes, err := io.ReadAll(conn)
 		if err != nil {
 			t.Error(err)
 		}
