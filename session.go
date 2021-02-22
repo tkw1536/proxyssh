@@ -8,6 +8,7 @@ import (
 
 	"github.com/gliderlabs/ssh"
 	"github.com/pkg/errors"
+	"github.com/tkw1536/proxyssh/internal/asyncio"
 	"github.com/tkw1536/proxyssh/internal/lock"
 	"github.com/tkw1536/proxyssh/internal/term"
 	"github.com/tkw1536/proxyssh/logging"
@@ -120,7 +121,7 @@ func (c *Session) startRegular() error {
 	go func() {
 		defer c.detector.Done("session: stdout")
 		defer stdout.Close()
-		io.Copy(c, stdout)
+		asyncio.CopyLeak(c.Context(), c, stdout)
 	}()
 
 	// create a pipe for stderr
@@ -132,7 +133,7 @@ func (c *Session) startRegular() error {
 	go func() {
 		defer c.detector.Done("session: stderr")
 		defer stderr.Close()
-		io.Copy(c.Stderr(), stderr)
+		asyncio.CopyLeak(c.Context(), c.Stderr(), stderr)
 	}()
 
 	// create a pipe for stdin
@@ -145,7 +146,7 @@ func (c *Session) startRegular() error {
 	go func() {
 		defer c.detector.Done("session: stdin")
 		defer stdin.Close()
-		io.Copy(stdin, c)
+		asyncio.CopyLeak(c.Context(), stdin, c)
 	}()
 
 	// and start the command
@@ -182,13 +183,13 @@ func (c *Session) startPty() error {
 	c.detector.Add("session: input")
 	go func() {
 		defer c.detector.Done("session: input")
-		io.Copy(f, c)
+		asyncio.CopyLeak(c.Context(), f, c)
 	}()
 
 	c.detector.Add("session: output")
 	go func() {
 		defer c.detector.Done("session: output")
-		io.Copy(c, f)
+		asyncio.CopyLeak(c.Context(), c, f)
 	}()
 
 	return nil

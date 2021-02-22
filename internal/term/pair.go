@@ -90,8 +90,7 @@ func (p *Pair) UnhangHack() {
 	// It turns out that in practice these calls may or may not work.
 	// however they do stop the memory leaks in regular exit cases.
 
-	// TODO: Figure out how to deal well with the hangup case
-	// where the terminal just exits.
+	// TODO: Figure out how to deal well with the hangup case; where the terminal just exists.
 
 	pty := p.External()
 	pty.Write([]byte{

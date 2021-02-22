@@ -2,15 +2,14 @@ package dockerexec
 
 import (
 	"context"
-	"io"
 	"os"
 	"strings"
 	"sync"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
-	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/tkw1536/proxyssh"
+	"github.com/tkw1536/proxyssh/internal/asyncio"
 	"github.com/tkw1536/proxyssh/internal/term"
 	"github.com/tkw1536/proxyssh/logging"
 )
@@ -163,7 +162,7 @@ func (cep *ContainerExecProcess) execAndStream(detector logging.MemoryLeakDetect
 	cep.conn = &conn
 
 	// setup channels
-	cep.outputErrChan = make(chan error)
+	cep.outputErrChan = make(chan error, 1)
 	cep.inputDoneChan = make(chan struct{})
 
 	// read output
@@ -172,10 +171,10 @@ func (cep *ContainerExecProcess) execAndStream(detector logging.MemoryLeakDetect
 		defer detector.Done("dockerexec: output")
 
 		if isPty {
-			_, err = io.Copy(cep.terminal.Internal(), conn.Reader)
+			_, err = asyncio.CopyLeak(cep.ctx, cep.terminal.Internal(), conn.Reader)
 			cep.terminal.RestoreMode()
 		} else {
-			_, err = stdcopy.StdCopy(cep.StdoutPipe, cep.StderrPipe, conn.Reader)
+			_, err = asyncio.StdCopyLeak(cep.ctx, cep.StdoutPipe, cep.StderrPipe, conn.Reader)
 		}
 
 		// close output and send error (if any)
@@ -188,9 +187,9 @@ func (cep *ContainerExecProcess) execAndStream(detector logging.MemoryLeakDetect
 		defer detector.Done("dockerexec: input")
 
 		if isPty {
-			io.Copy(conn.Conn, cep.terminal.Internal())
+			asyncio.CopyLeak(cep.ctx, conn.Conn, cep.terminal.Internal())
 		} else {
-			io.Copy(conn.Conn, cep.StdinPipe)
+			asyncio.CopyLeak(cep.ctx, conn.Conn, cep.StdinPipe)
 		}
 		conn.CloseWrite()
 		close(cep.inputDoneChan)
