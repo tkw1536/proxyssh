@@ -42,7 +42,6 @@ func makeProcessHandler(logger logging.Logger, handler Handler) ssh.Handler {
 			return
 		}
 
-		// TODO: Have (command, args) returned
 		sshcmd := &Session{
 			Session: session,
 			Logger:  logger,
