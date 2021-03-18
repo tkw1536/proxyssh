@@ -10,8 +10,6 @@ import (
 	"github.com/tkw1536/proxyssh/internal/lock"
 )
 
-// TODO: Test the leak detector; should be relatively simple to do
-
 // MemoryLeakDetectorInterface represents a Memory Leak Detector.
 // It is used to ensure that no concurrent processes have caused a memory leak within sessions.
 //
@@ -26,10 +24,10 @@ import (
 // When the MemoryLeakDetectorInterface is disabled, all functions in this interface are noops.
 // As opposed to using this interface, that enables the disabled variant to be compiled away.
 type MemoryLeakDetectorInterface interface {
-	// Add and Done are used to register asynronous processes with this LeakDetector.
+	// Add and Done are used to register async processes with this LeakDetector.
 	//
-	// A call to Add() should be performed when an action is started.
-	// A call to Done() with the same name should be performed when the action is completed as expected.
+	// A call to Add() should be performed when an async action is started.
+	// A call to Done() with the same name should be performed when the async action is completed as expected.
 	//
 	// Names should be unique. Upon reuse, Add() and Done() call panic().
 	Add(name string)
@@ -164,8 +162,7 @@ func (d *MemoryLeakDetectorOn) fire(logger Logger, s LogSessionOrContext) {
 //  Disabled Memory Leak Detector
 //
 
-// MemoryLeakDetectorOff is the disabled variant of MemoryL.
-// For documentation, see the LeakDetector interface.
+// MemoryLeakDetectorOff is the disabled variant of MemoryLeakDetectorInterface.
 type MemoryLeakDetectorOff struct{}
 
 // Add implements MemoryLeakDetectorInterface.Add.
