@@ -6,43 +6,30 @@ import (
 	"time"
 )
 
+// This file is untested because Wait() is tested.
+
 // Read is a replacement for reader.Read() that returns within timeout after context is canncelled.
 //
 // Read can not cancel the underlying I/O; instead it is left running in a seperate goroutine.
 func Read(ctx context.Context, timeout time.Duration, reader io.Reader, p []byte) (n int, err error) {
-
-	// channel for the read
-	readDone := make(chan struct{})
-
 	// prepare return values for the inner read value
 	innerP := bufferFromPool(len(p))
 	defer bufferPool.Put(innerP)
 
+	// prepare inner return values
 	var innerN int
 	var innerErr error
 
-	go func() {
-		defer close(readDone)
+	// wait for the read to finish
+	ok := Wait(ctx, timeout, func() {
 		innerN, innerErr = reader.Read(innerP)
-	}()
+	}, nil)
 
-	// wait for the read to be done!
-	select {
-	case <-readDone:
-		goto readOK
-	case <-ctx.Done():
+	if !ok {
+		return 0, ErrCanceled // read timed out
 	}
 
-	// wait again for the timeout to expire
-	select {
-	case <-readDone:
-		goto readOK
-	case <-time.After(timeout):
-	}
-
-	return 0, ErrCanceled
-
-readOK:
+	// copy the return values and exit
 	copy(p, innerP[:innerN])
 	return innerN, innerErr
 }

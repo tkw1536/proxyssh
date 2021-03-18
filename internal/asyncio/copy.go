@@ -1,4 +1,3 @@
-// Package asyncio provides context-aware alternatives to io methods.
 package asyncio
 
 import (
@@ -12,7 +11,7 @@ import (
 	"github.com/tkw1536/proxyssh/logging"
 )
 
-// TODO: Test this package!
+// This code is untested, because Read() is tested
 
 // ErrCanceled is returned by Read() or Write() when the context was canceled and the timeout expired.
 var ErrCanceled = errors.New("asyncio: Context canceled and timeout expired")
