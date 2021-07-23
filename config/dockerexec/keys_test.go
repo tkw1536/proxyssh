@@ -1,3 +1,5 @@
+// +build dockertest
+
 package dockerexec
 
 import (
@@ -11,10 +13,6 @@ import (
 )
 
 func TestFindContainerKeys(t *testing.T) {
-	if testing.Short() {
-		t.Skip("Skipping docker-compose test in short mode")
-	}
-
 	integrationtest.RunComposeTest(findAuthContainerCompose, map[string]string{
 		"authorized_key_a": testutils.AuthorizedKeysString(testPublicKeyA) + "\n",
 		"authorized_key_b": testutils.AuthorizedKeysString(testPublicKeyB) + "\n",

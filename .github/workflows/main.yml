@@ -23,7 +23,7 @@ jobs:
           with:
             go-version: ${{ env.GO_VERSION }}
         - name: Run 'go test'
-          run: go test -tags=leak ./...
+          run: go test -tags=leak,dockertest ./...
   build:
     runs-on: ubuntu-latest
     steps:

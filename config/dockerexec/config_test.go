@@ -1,3 +1,5 @@
+// +build dockertest
+
 package dockerexec
 
 import (
@@ -19,10 +21,6 @@ var execTestConfig = &ContainerExecConfig{
 }
 
 func TestConnectContainer(t *testing.T) {
-	if testing.Short() {
-		t.Skip("Skipping docker-compose test in short mode")
-	}
-
 	integrationtest.RunComposeTest(configComposeTest, map[string]string{
 		"authorized_key": testutils.AuthorizedKeysString(testPublicKeyConfig) + "\n",
 	}, func(cli client.APIClient, findService func(name string) types.Container, stopService func(name string)) error {

@@ -1,3 +1,5 @@
+// +build dockertest
+
 package dockerexec
 
 import (
@@ -10,10 +12,6 @@ import (
 )
 
 func TestFindUniqueContainer(t *testing.T) {
-	if testing.Short() {
-		t.Skip("Skipping docker-compose test in short mode")
-	}
-
 	integrationtest.RunComposeTest(findUniqueContainerCompose, nil, func(cli client.APIClient, findService func(name string) types.Container, stopService func(name string)) error {
 		t.Run("find a single container", func(t *testing.T) {
 			container, err := FindUniqueContainer(cli, "de.tkw01536.test", "a")

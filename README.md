@@ -26,11 +26,12 @@ The tests can be run as any normal go test suite can:
 
     go test ./...
 
-These tests require `docker-compose` and `/bin/bash` to be installed on the local machine.
+Some tests require `docker-compose` and `/bin/bash` to be installed on the local machine.
 They furthermore require a network connection to download the `alpine` docker image during tests.
-It is also possible to skip any docker tests:
+These special tests are not run by default, but only when the `dockertests` tag is provided.
+To run these tests, use:
 
-    go test -short ./...
+    go test -tag=dockertest ./...
 
 The memory leak detector is not enabled by default and not used during the tests.
 By default, all code calling the memory leak detector is removed during compilation. 
