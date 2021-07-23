@@ -112,8 +112,8 @@ func (cfg *ContainerExecConfig) RegisterFlags(flagset *flag.FlagSet) {
 		flagset = flag.CommandLine
 	}
 
-	flag.StringVar(&cfg.DockerLabelUser, "userlabel", cfg.DockerLabelUser, "Label to find docker files by")
-	flag.StringVar(&cfg.DockerLabelAuthFile, "keylabel", cfg.DockerLabelAuthFile, "Label to find the authorized_keys file by")
+	flagset.StringVar(&cfg.DockerLabelUser, "userlabel", cfg.DockerLabelUser, "Label to find docker files by")
+	flagset.StringVar(&cfg.DockerLabelAuthFile, "keylabel", cfg.DockerLabelAuthFile, "Label to find the authorized_keys file by")
 
-	flag.StringVar(&cfg.ContainerShell, "shell", cfg.ContainerShell, "Shell to execute within the container")
+	flagset.StringVar(&cfg.ContainerShell, "shell", cfg.ContainerShell, "Shell to execute within the container")
 }
