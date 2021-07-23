@@ -56,5 +56,3 @@ To e.g. allow clients to expose port 8080 the `exposshed` image can be run as fo
 ```bash
 docker run -t -v /path/to/hostkeys:/data/ -i --rm -p 2222:localhost:2222 -p 8080:8080 ghcr.io/tkw1536/exposshed:latest -R 0.0.0.0:8080
 ```
-
-For legacy reasons, the `dockersshd` Image is also available as the automated build [tkw01536/proxyssh](https://hub.docker.com/r/tkw01536/proxyssh). 
