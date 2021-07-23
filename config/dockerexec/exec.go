@@ -4,7 +4,6 @@ import (
 	"context"
 	"os"
 	"strings"
-	"sync"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
@@ -84,7 +83,6 @@ type ContainerExecProcess struct {
 	// for result handling
 	outputErrChan chan error
 	inputDoneChan chan struct{}
-	restoreTerms  sync.Once
 
 	// for cleanup
 	exited bool
