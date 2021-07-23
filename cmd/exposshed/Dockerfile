@@ -2,16 +2,9 @@
 FROM alpine as permission
 
 # Create a www-data user
-ENV USER=www-data
-ENV UID=82
-RUN adduser \
-    --disabled-password \
-    --gecos "" \
-    --home "/nonexistent" \
-    --shell "/sbin/nologin" \
-    --no-create-home \
-    --uid "${UID}" \
-    "${USER}"
+RUN set -x ; \
+  addgroup -g 82 -S www-data ; \
+  adduser -u 82 -D -S -G www-data www-data && exit 0 ; exit 1
 
 # Make a volume under data for the user
 RUN mkdir -p /data/keys/ && chown -R www-data:www-data /data/ && chmod -R 777 /data/
