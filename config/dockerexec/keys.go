@@ -68,7 +68,7 @@ func FindContainerKeys(cli client.APIClient, container types.Container, options 
 func parseAllKeys(bytes []byte) (keys []ssh.PublicKey) {
 	var key ssh.PublicKey
 	var err error
-	for true {
+	for {
 		key, _, _, bytes, err = ssh.ParseAuthorizedKey(bytes)
 		if err != nil {
 			break
