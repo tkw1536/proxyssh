@@ -1,3 +1,4 @@
+//go:build dockertest
 // +build dockertest
 
 package dockerexec

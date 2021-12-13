@@ -1,3 +1,4 @@
+//go:build !leak
 // +build !leak
 
 package logging
