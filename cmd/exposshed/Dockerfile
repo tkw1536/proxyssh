@@ -10,7 +10,7 @@ RUN set -x ; \
 RUN mkdir -p /data/keys/ && chown -R www-data:www-data /data/ && chmod -R 777 /data/
 
 # Stage 2: Build exposshed
-FROM golang as build
+FROM golang:1.17 as build
 ADD . /app/src/github.com/tkw1536/proxyssh
 WORKDIR /app/src/github.com/tkw1536/proxyssh/
 RUN CGO_ENABLED=0 GOOS=linux go build -o /exposshed ./cmd/exposshed
