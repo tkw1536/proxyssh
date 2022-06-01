@@ -1,5 +1,5 @@
 # Stage 1: Build the application
-FROM golang:1.17 as builder
+FROM golang:1.18 as builder
 ADD . /app/src/github.com/tkw1536/proxyssh
 WORKDIR /app/src/github.com/tkw1536/proxyssh
 RUN CGO_ENABLED=0 GOOS=linux go build -o /dockersshd ./cmd/dockersshd
