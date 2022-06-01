@@ -31,7 +31,7 @@ They furthermore require a network connection to download the `alpine` docker im
 These special tests are not run by default, but only when the `dockertests` tag is provided.
 To run these tests, use:
 
-    go test -tag=dockertest ./...
+    go test -tags=dockertest ./...
 
 The memory leak detector is not enabled by default and not used during the tests.
 By default, all code calling the memory leak detector is removed during compilation. 
