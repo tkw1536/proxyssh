@@ -25,10 +25,22 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
           registry: ${{ env.REGISTRY }}
+      - uses: docker/metadata-action@v3
+        name: Docker meta
+        id: meta
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_BASENAME }}/${{ matrix.dockerimage }}
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}
+            type=semver,pattern={{major}}.{{minor}}
       - uses: docker/build-push-action@v2
         with:
           file: ./cmd/${{ matrix.dockerimage }}/Dockerfile
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_BASENAME }}/${{ matrix.dockerimage }}:latest
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           platforms: ${{ env.PLATFORMS }}
           pull: true
           push: true
