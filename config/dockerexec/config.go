@@ -5,6 +5,7 @@ import (
 	"flag"
 	"strings"
 
+	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	"github.com/gliderlabs/ssh"
 	"github.com/tkw1536/proxyssh"
@@ -60,15 +61,37 @@ type ContainerExecConfig struct {
 	ContainerShell string
 }
 
-// BUG: We find the unique container associated to a provided server twice.
-// This could technically be abused for timing attacks.
-// But I am not sure how to avoid this.
+// execContextKeys represents context keys for this package
+type execContextKeys int
+
+const (
+	containerContextKey execContextKeys = iota
+)
+
+func (cfg *ContainerExecConfig) findContainer(ctx ssh.Context) (types.Container, error) {
+	// if we previously fetched the container it will be in the context
+	value := ctx.Value(containerContextKey)
+	container, ok := value.(types.Container)
+	if ok {
+		return container, nil
+	}
+
+	// find the actual container
+	container, err := FindUniqueContainer(cfg.Client, cfg.DockerLabelUser, ctx.User())
+	if err != nil {
+		return types.Container{}, err
+	}
+
+	// store it in the context and return
+	ctx.SetValue(containerContextKey, container)
+	return container, nil
+}
 
 // Apply applies this configuration to the server.
 func (cfg *ContainerExecConfig) Apply(logger logging.Logger, sshserver *ssh.Server) error {
 	sshserver.PublicKeyHandler = feature.AuthorizeKeys(logger, func(ctx ssh.Context) ([]ssh.PublicKey, error) {
 		// find the (unique) associated container
-		container, err := FindUniqueContainer(cfg.Client, cfg.DockerLabelUser, ctx.User())
+		container, err := cfg.findContainer(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -97,11 +120,10 @@ func (cfg *ContainerExecConfig) Handle(logger logging.Logger, session ssh.Sessio
 	}
 
 	// find the (unique) associated container
-	container, err := FindUniqueContainer(cfg.Client, cfg.DockerLabelUser, session.User())
+	container, err := cfg.findContainer(session.Context())
 	if err != nil {
 		return nil, err
 	}
-
 	return NewContainerExecProcess(cfg.Client, container.ID, command), nil
 }
 
