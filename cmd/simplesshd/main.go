@@ -5,7 +5,7 @@
 // The various defaults are unsafe.
 // It exists to demonstrate the functionality of the proxyssh package.
 //
-// Overview
+// # Overview
 //
 // When a connection is received no authentication is performed and it is accepted by default.
 //
@@ -19,15 +19,16 @@
 // This daemon furthermore allows Port Forwarding and Reverse Port Forwarding.
 // This is only allowed to a limited set of Network Addresses, these have to be provided via arguments.
 //
-// Configuration
+// # Configuration
 //
 // All configuration is performed using command line flags.
 //
-//  -port hostname:port
+//	-port hostname:port
+//
 // By default connections on any interface on port 2222 will be accepted.
 // This can be changed using this argument.
 //
-//  -shell executable
+//	-shell executable
 //
 // When executing a user program the '/bin/bash' shell is used by default.
 // This argument allows to use a different shell instead.
@@ -37,17 +38,19 @@
 // When the user provides a command to run, it is passed to the shell using a '-c' argument.
 // For example, suppose the shell is /bin/bash and the user requests the command 'ls -alh'.
 // Then this program will execute the command:
-//   /bin/bash -c "ls -alh"
+//
+//	/bin/bash -c "ls -alh"
+//
 // No escaping is performed on the user-provided shell command.
 //
-//  -L host:port, -R host:port
+//	-L host:port, -R host:port
 //
 // To configure the ports to allow traffic to and from certain hosts in the local network via the ssh server, the '-L' and '-R' flags can be used.
 // '-L' enables the ssh client to send connections to the provided host:port combination.
 // '-R' enables the reverse, enabling the ssh client to accept connections at the provided host and port.
 // Both flags can be passed multiple times.
 //
-//  -hostkey prefix
+//	-hostkey prefix
 //
 // Te daemon supports two kinds of ssh host keys, an RSA and an ED25519 key.
 // By default these are stored in two files called 'hostkey.pem_rsa' and 'hostkey.pem_ed25519' in the working directory of the simplesshd process.
@@ -56,7 +59,7 @@
 // It is possible to customize where these files are stored.
 // Using this argument their prefix (by default 'hostkey.pem') can be set.
 //
-//  -timeout time
+//	-timeout time
 //
 // By default, SSH connections are terminated after one hour of inactivity.
 // This timeout can be customized using this flag.

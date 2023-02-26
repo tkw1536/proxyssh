@@ -33,17 +33,15 @@ type ComposeTestCode func(cli client.APIClient, findService func(string) types.C
 // Thenm it writes out addtional data files in the provided map and waits for it to become available.
 // Finally, it runs the testcode function.
 //
-//
 // Calling this function is roughly equivalent to the following bash pseudo-code:
 //
-//   mktmp -d
-//   echo $config > tmpdir/docker-compose.yml
-//   docker-compose pull
-//   docker-compose up -d tmpdir/docker-compose.yml
-//   // ... call f() ...
-//   docker-compose down -v
-//   rm -rf tmpdir
-//
+//	mktmp -d
+//	echo $config > tmpdir/docker-compose.yml
+//	docker-compose pull
+//	docker-compose up -d tmpdir/docker-compose.yml
+//	// ... call f() ...
+//	docker-compose down -v
+//	rm -rf tmpdir
 //
 // For source code compatibility purposes, all occurences of '\t' in the compose file will be replace with four spaces.
 //

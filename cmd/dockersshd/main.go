@@ -1,8 +1,7 @@
 // Command dockersshd provides an ssh server that executes commands inside docker.
 // It accepts connections on port 2222 from any interface by default.
 //
-//
-// Overview
+// # Overview
 //
 // When a connection is received the daemon will first attempt to find a matching docker container.
 // This happens by finding docker containers where the label 'de.tkw1536.proxyssh.user' is equal to the username of the ssh connection.
@@ -24,23 +23,23 @@
 // This is only allowed to a limited set of Network Addresses, these have to be provided via arguments.
 // These are evaluated relative to the 'dockersshd' host, not the docker container in question.
 //
-//
-// Configuration
+// # Configuration
 //
 // All configuration is performed using command line flags.
 //
-//  -port hostname:port
+//	-port hostname:port
+//
 // By default connections on any interface on port 2222 will be accepted.
 // This can be changed using this argument.
 //
-//  -userlabel label
+//	-userlabel label
 //
 // To associate a docker container with an incoming connection by default the 'de.tkw1536.proxyssh.user' label is used.
 // In order for a connection to succeed, there must be a single running container with the label value equal to the username
 // of the incoming connection.
 // This argument can be used to use a different label instead.
 //
-//  -keylabel label
+//	-keylabel label
 //
 // By default to authenticate a user the 'de.tkw1536.proxyssh.authfile' label of docker containers is used.
 // The value of this label should contain comma-seperated file paths to authorized_keys files within the docker container.
@@ -48,12 +47,12 @@
 // Connections are accepted if any of the public key signatures match the incoming ssh key.
 // This argument can be used to use a different label instead.
 //
-//  -unsafe
+//	-unsafe
 //
 // This flag can be used to turn off authentication completly.
 // It should not be used in production, and is for debugging purposes only.
 //
-//  -shell executable
+//	-shell executable
 //
 // When executing a user program inside a docker container the '/bin/sh' shell is used by default.
 // This argument allows to use a different shell instead.
@@ -63,17 +62,19 @@
 // When the user provides a command to run, it is passed to the shell using a '-c' argument.
 // For example, suppose the shell is /bin/sh and the user requests the command 'ls -alh'.
 // Then this program will execute the command:
-//   /bin/sh -c "ls -alh"
+//
+//	/bin/sh -c "ls -alh"
+//
 // No escaping is performed on the user-provided shell command.
 //
-//  -L host:port, -R host:port
+//	-L host:port, -R host:port
 //
 // To configure the ports to allow traffic to and from certain hosts in the local network via the ssh server, the '-L' and '-R' flags can be used.
 // '-L' enables the ssh client to send connections to the provided host:port combination.
 // '-R' enables the reverse, enabling the ssh client to accept connections at the provided host and port.
 // Both flags can be passed multiple times.
 //
-//  -hostkey prefix
+//	-hostkey prefix
 //
 // The daemon supports two kinds of ssh host keys, an RSA and an ED25519 key.
 // By default these are stored in two files called 'hostkey.pem_rsa' and 'hostkey.pem_ed25519' in the working directory of the proxysshd process.
@@ -82,7 +83,7 @@
 // It is possible to customize where these files are stored.
 // Using this argument their prefix (by default 'hostkey.pem') can be set.
 //
-//  -timeout time
+//	-timeout time
 //
 // By default, SSH connections are terminated after one hour of inactivity.
 // This timeout can be customized using this flag.

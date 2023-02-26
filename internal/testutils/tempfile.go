@@ -16,8 +16,8 @@ import (
 // It is the callers responsibility to call the cleanup function.
 // A typical invocation of this function is something like:
 //
-//   tempfile, cleanup = WriteTempFile(pattern, content)
-//   defer cleanup()
+//	tempfile, cleanup = WriteTempFile(pattern, content)
+//	defer cleanup()
 //
 // If something goes wrong during the creation of the temporary file, panic() is called.
 func WriteTempFile(pattern, content string) (filepath string, cleanup func()) {

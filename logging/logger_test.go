@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-//testLoggerObj that writes the log message into message
+// testLoggerObj that writes the log message into message
 type testLoggerObj struct {
 	message string
 }

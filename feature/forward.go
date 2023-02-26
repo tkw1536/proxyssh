@@ -47,7 +47,6 @@ func filterInternal(logger logging.Logger, logExtra string, ctx ssh.Context, add
 // This function also calls EnablePortForwarding, please see appropriate documentation
 //
 // See also AllowForwardTo, AllowForwardFrom and EnablePortForwarding.
-//
 func AllowPortForwarding(logger logging.Logger, server *ssh.Server, toAddresses []NetworkAddress, fromAddresses []NetworkAddress) {
 	EnablePortForwarding(server, AllowForwardTo(logger, toAddresses), AllowForwardFrom(logger, fromAddresses))
 }

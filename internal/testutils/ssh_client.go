@@ -19,11 +19,11 @@ import (
 // If an error occurs during initialization, the client and session will be closed and an error will be returned.
 // A typical invocation of this function should look like:
 //
-//  client, session, err := NewTestServerSession(address, ssh.ClientConfig{})
-//  if err != nil {
-//  	return err
-//  }
-//  defer client.Close()
+//	client, session, err := NewTestServerSession(address, ssh.ClientConfig{})
+//	if err != nil {
+//		return err
+//	}
+//	defer client.Close()
 //
 // This function is itself untested.
 func NewTestServerSession(address string, options ssh.ClientConfig) (*ssh.Client, *ssh.Session, error) {

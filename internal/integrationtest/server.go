@@ -13,7 +13,6 @@ import (
 // NewServer creates a new proxyssh.Server for an integration test.
 // Returns the test server and a cleanup function to be defered.
 //
-//
 // When options is nil, sets up empty options.
 //
 // When testServer.Handler remains unset, sets it to respond with "success" on stdout and exit immediatly.
@@ -21,8 +20,8 @@ import (
 //
 // This function should be used like:
 //
-//   testServer, cleanup := NewServer(testServer)
-//   defer cleanup()
+//	testServer, cleanup := NewServer(testServer)
+//	defer cleanup()
 //
 // This function is untested.
 func NewServer(options *proxyssh.Options, configurations ...proxyssh.Configuration) (testServer *ssh.Server, testLogger logging.Logger, cleanup func()) {

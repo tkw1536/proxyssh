@@ -16,15 +16,13 @@ import (
 // Second it requires a closure to be passed, resulting in additional code complexity.
 // OneTime works around both of these by providing a single Lock() function that returns a boolean.
 //
-//
-//  type whatever struct { lock OneTime }
-//  func (w *whatever) DoSomethingOnlyOnce() {
-//		if !w.lock.Lock() { // if the action has been started elsewhere, return immediatly.
-//			return
+//	 type whatever struct { lock OneTime }
+//	 func (w *whatever) DoSomethingOnlyOnce() {
+//			if !w.lock.Lock() { // if the action has been started elsewhere, return immediatly.
+//				return
+//			}
+//			// ... action to perform ...
 //		}
-//		// ... action to perform ...
-//	}
-//
 type OneTime struct {
 	noCopy noCopy
 

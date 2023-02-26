@@ -38,9 +38,9 @@ func NewTestListenAddress() string {
 // This function performs blocking work on the goroutine it was called on.
 // As such, it should typically be called like:
 //
-//  listener, err := net.Listen("tcp", address)
-//  go TCPConstantTestResponse(listener, response)
-//  defer listener.Close()
+//	listener, err := net.Listen("tcp", address)
+//	go TCPConstantTestResponse(listener, response)
+//	defer listener.Close()
 func TCPConstantTestResponse(listener net.Listener, response string) {
 	// respond to everything with a constant response
 	responseBytes := []byte(response)

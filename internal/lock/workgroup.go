@@ -40,12 +40,11 @@ func (wg *WorkGroup) Done() {
 // Wait calls Wait() on the underlying WaitGroup.
 // A typical use of this function is like:
 //
-//  wg.Lock()
-//  defer wg.Unlock()
-//  wg.Wait()
+//	wg.Lock()
+//	defer wg.Unlock()
+//	wg.Wait()
 //
-//  // perform some work that during which no new jobs are added.
-//
+//	// perform some work that during which no new jobs are added.
 func (wg *WorkGroup) Wait() {
 	wg.waitgroup.Wait()
 }
