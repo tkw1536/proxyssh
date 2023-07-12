@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/creack/pty v1.1.18
-	github.com/docker/docker v20.10.21+incompatible
+	github.com/docker/docker v20.10.24+incompatible
 	github.com/gliderlabs/ssh v0.3.5
 	github.com/moby/term v0.0.0-20220808134915-39b0c02b01ae
 	github.com/pkg/errors v0.9.1
