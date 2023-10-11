@@ -8,7 +8,7 @@ require (
 	github.com/gliderlabs/ssh v0.3.5
 	github.com/moby/term v0.0.0-20220808134915-39b0c02b01ae
 	github.com/pkg/errors v0.9.1
-	golang.org/x/crypto v0.1.0
+	golang.org/x/crypto v0.14.0
 )
 
 require (
@@ -25,9 +25,9 @@ require (
 	github.com/opencontainers/image-spec v1.1.0-rc2 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	golang.org/x/mod v0.6.0 // indirect
-	golang.org/x/net v0.7.0 // indirect
-	golang.org/x/sys v0.5.0 // indirect
-	golang.org/x/term v0.5.0 // indirect
+	golang.org/x/net v0.17.0 // indirect
+	golang.org/x/sys v0.13.0 // indirect
+	golang.org/x/term v0.13.0 // indirect
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
 	golang.org/x/tools v0.2.0 // indirect
 	gotest.tools/v3 v3.0.3 // indirect
