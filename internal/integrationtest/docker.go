@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	"github.com/pkg/errors"
@@ -56,7 +57,7 @@ func RunComposeTest(config string, files map[string]string, testcode ComposeTest
 	// TODO: Make a simple test for this function
 
 	// create a new docker client or panic
-	cli, err := client.NewEnvClient()
+	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
 		err = errors.Wrap(err, "Unable to create docker client")
 		panic(err)
@@ -120,13 +121,13 @@ func RunComposeTest(config string, files map[string]string, testcode ComposeTest
 	defer compose("down", "-v")
 
 	// finally run the testcode
-	return testcode(cli, func(service string) types.Container {
+	return testcode(cli, func(service string) container.Summary {
 
 		filters := filters.NewArgs()
 		filters.Add("label", "com.docker.compose.service="+service)
 		filters.Add("label", "com.docker.compose.project="+projectName)
 
-		lst, err := cli.ContainerList(context.Background(), types.ContainerListOptions{
+		lst, err := cli.ContainerList(context.Background(), container.ListOptions{
 			Filters: filters,
 		})
 		if len(lst) == 0 {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	"github.com/pkg/errors"
@@ -17,14 +18,14 @@ var ErrContainerNotUnique = errors.New("No unique container found")
 //
 // If there is no unique runing container, returns ErrContainerNotUnique.
 // If something goes wrong, other errors may be returned.
-func FindUniqueContainer(cli client.APIClient, key string, value string) (container types.Container, err error) {
+func FindUniqueContainer(cli client.APIClient, key string, value string) (container_ types.Container, err error) {
 	// Setup a filter for a running container with the given key/value label
 	Filters := filters.NewArgs()
 	Filters.Add("label", fmt.Sprintf("%s=%s", key, value))
 	Filters.Add("status", "running")
 
 	// do the list
-	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{
+	containers, err := cli.ContainerList(context.Background(), container.ListOptions{
 		Filters: Filters,
 	})
 	if err != nil {

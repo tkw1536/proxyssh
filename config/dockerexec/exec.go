@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/tkw1536/proxyssh"
 	"github.com/tkw1536/proxyssh/internal/asyncio"
@@ -46,7 +47,7 @@ import (
 //
 // The command will not prefix the entrypoint.
 func NewContainerExecProcess(client client.APIClient, containerID string, command []string) *ContainerExecProcess {
-	config := types.ExecConfig{
+	config := container.ExecOptions{
 		AttachStdin:  true,
 		AttachStderr: true,
 		AttachStdout: true,
@@ -70,7 +71,7 @@ type ContainerExecProcess struct {
 
 	// parameters
 	containerID string
-	config      types.ExecConfig
+	config      container.ExecOptions
 
 	// internal streams
 	term.Pipes
@@ -127,7 +128,7 @@ func (cep *ContainerExecProcess) Start(detector logging.MemoryLeakDetector, Term
 		cep.config.Env = append(cep.config.Env, "TERM="+Term)
 
 		cep.terminal.HandleWith(resizeChan, func(size proxyssh.WindowSize) {
-			cep.client.ContainerExecResize(cep.ctx, cep.execID, types.ResizeOptions{
+			cep.client.ContainerExecResize(cep.ctx, cep.execID, container.ResizeOptions{
 				Height: uint(size.Height),
 				Width:  uint(size.Width),
 			})
@@ -153,7 +154,7 @@ func (cep *ContainerExecProcess) execAndStream(detector logging.MemoryLeakDetect
 	cep.execID = res.ID
 
 	// attach to it
-	conn, err := cep.client.ContainerExecAttach(cep.ctx, cep.execID, types.ExecStartCheck{
+	conn, err := cep.client.ContainerExecAttach(cep.ctx, cep.execID, container.ExecAttachOptions{
 		Detach: false,
 		Tty:    isPty,
 	})
