@@ -16,7 +16,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// ComposeTestCode is a function that runs tests inside a docker-compose file context.
+// ComposeTestCode is a function that runs tests inside a docker compose file context.
 // It returns an error if the test cases failed, and nil otherwise.
 // See also RunComposeTest.
 //
@@ -24,13 +24,13 @@ import (
 //
 // cli is a valid Docker Client that can be used for arbitary interactions with docker.
 //
-// findService is a function that is provided a name of a service, and returns the container within the current docker-compose context.
+// findService is a function that is provided a name of a service, and returns the container within the current docker compose context.
 //
-// stopService and is a function that can be used to stop a particular service in the docker-compose service.
+// stopService and is a function that can be used to stop a particular service in the docker compose service.
 type ComposeTestCode func(cli client.APIClient, findService func(string) types.Container, stopService func(string)) error
 
-// RunComposeTest runs a docker-compose based test.
-// It first starts the docker-compose configuration contained in the string.
+// RunComposeTest runs a docker compose based test.
+// It first starts the docker compose configuration contained in the string.
 // Thenm it writes out addtional data files in the provided map and waits for it to become available.
 // Finally, it runs the testcode function.
 //
@@ -38,15 +38,15 @@ type ComposeTestCode func(cli client.APIClient, findService func(string) types.C
 //
 //	mktmp -d
 //	echo $config > tmpdir/docker-compose.yml
-//	docker-compose pull
-//	docker-compose up -d tmpdir/docker-compose.yml
+//	docker compose pull
+//	docker compose up -d tmpdir/docker-compose.yml
 //	// ... call f() ...
-//	docker-compose down -v
+//	docker compose down -v
 //	rm -rf tmpdir
 //
 // For source code compatibility purposes, all occurences of '\t' in the compose file will be replace with four spaces.
 //
-// This command depends on the 'docker-compose' executable to be available in path.
+// This command depends on the 'docker compose' executable to be available in path.
 //
 // This function has two kinds of error conditions, those that occur during setting up the project, and those that occur in the testcode.
 // If an error occurs during setup or teardown, panic() is called.
@@ -65,10 +65,10 @@ func RunComposeTest(config string, files map[string]string, testcode ComposeTest
 	cli.NegotiateAPIVersion(context.Background())
 	defer cli.Close()
 
-	// check that docker-compose exists
-	dockerComposePath, err := exec.LookPath("docker-compose")
+	// check that docker compose exists
+	dockerPath, err := exec.LookPath("docker")
 	if err != nil {
-		err = errors.Wrap(err, "Unable to find 'docker-compose' in $PATH")
+		err = errors.Wrap(err, "Unable to find 'docker' in $PATH")
 		panic(err)
 	}
 
@@ -100,10 +100,10 @@ func RunComposeTest(config string, files map[string]string, testcode ComposeTest
 	// generate a project name
 	projectName := "test-" + strconv.Itoa(rand.Int())
 
-	// function to run a docker-compose command
+	// function to run a docker compose command
 	compose := func(args ...string) {
-		cmd := exec.Command(dockerComposePath,
-			append([]string{"-f", dockerComposeYML, "-p", projectName}, args...)...,
+		cmd := exec.Command(dockerPath,
+			append([]string{"compose", "-f", dockerComposeYML, "-p", projectName}, args...)...,
 		)
 
 		cmd.Stdout = os.Stdout
@@ -111,12 +111,12 @@ func RunComposeTest(config string, files map[string]string, testcode ComposeTest
 		cmd.Dir = tmpDir
 
 		if err := cmd.Run(); err != nil {
-			err = errors.Wrap(err, "docker-compose failed to run")
+			err = errors.Wrap(err, "docker compose failed to run")
 			panic(err)
 		}
 	}
 
-	// Setup running docker-compose up -d and the opposite docker-compose down -v
+	// Setup running docker compose up -d and the opposite docker compose down -v
 	compose("up", "-d")
 	defer compose("down", "-v")
 

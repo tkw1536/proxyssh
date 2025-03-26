@@ -26,7 +26,7 @@ The tests can be run as any normal go test suite can:
 
     go test ./...
 
-Some tests require `docker-compose` and `/bin/bash` to be installed on the local machine.
+Some tests require `docker compose` and `/bin/bash` to be installed on the local machine.
 They furthermore require a network connection to download the `alpine` docker image during tests.
 These special tests are not run by default, but only when the `dockertests` tag is provided.
 To run these tests, use:
